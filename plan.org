@@ -1,0 +1,14 @@
+#+title: Plan
+
+* Labyrinth, nicht komplett frei bewegbar
+* Große Bäume, die man nicht fällen kann (trotz Tools)
+* Durchslashen kostet Durability, man kommt ein paar Felder weiter
+* Man findet Items, um sich (oder Schiff oder so) zu reparieren
+* Manchmal fällt der Baum nicht um, wird zum permanenten Hindernis, ...
+* Tools:
+** Spitzhacke
+** Taschenlampe (zum Map aufdecken kurzzeitig)
+** Langsamer je weniger Durability, ...
+* Zu machen [0/2]:
+** [ ] Map
+** [ ] Was weiß ich
