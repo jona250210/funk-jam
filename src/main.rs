@@ -1,66 +1,61 @@
-use raylib::{
-    prelude::*,
-};
+mod player;
+
+use nonempty::{NonEmpty, nonempty};
+use player::Player;
+use raylib::prelude::*;
 
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
-    let l = rl.load_texture(&thread, "Hammer.png").unwrap();
-
-    println!("({}, {})", l.width, l.height);
-
-    while !rl.window_should_close() {
-        let mut d = rl.begin_drawing(&thread);
-
-        d.clear_background(Color::WHITE);
-        d.draw_text("Hello, world!", 12, 12, 20, Color::BLACK);
-        d.draw_texture(&l, 200, 200, Color::WHITE);
-    }
-}
-
-fn main_alt() {
-    let l = vec![
-        "Hallo".to_string(),
-        "Welt".to_string(),
-        "Rust".to_string(),
-        "ja".to_string(),
+    let frames = nonempty![
+        rl.load_texture(&thread, "assets/run0.png").unwrap(),
+        rl.load_texture(&thread, "assets/run1.png").unwrap(),
+        rl.load_texture(&thread, "assets/run2.png").unwrap(),
+        rl.load_texture(&thread, "assets/run3.png").unwrap(),
+        rl.load_texture(&thread, "assets/run4.png").unwrap(),
+        rl.load_texture(&thread, "assets/run5.png").unwrap(),
+        rl.load_texture(&thread, "assets/run6.png").unwrap(),
     ];
 
-    // let _ = match get_longest(&l) {
-    //     Some(a) => a,
-    //     None => String::from(""),
-    // };
-
-    println!("{}", get_longest(&l).unwrap_or("!!Empty!!".to_string()));
-    println!("{}", get_longest(&l).unwrap_or("!!Empty!!".to_string()));
-    println!("{}", get_longest(&l).unwrap_or("!!Empty!!".to_string()));
-
-    let hmm = Test::Name(String::from("Welt"));
+    rl.set_target_fps(120);
+    let mut player = Player::new(Vector2::new(200.0, 200.0), &frames);
 
     println!(
-        "{}",
-        match hmm {
-            Test::Empty => String::from(""),
-            Test::Coord { x, y } => format!("({}, {})", x, y),
-            Test::Name(s) => s,
-        }
+        "({}, {})",
+        player.animation.current.width, player.animation.current.height
     );
-}
 
-fn get_longest(l: &Vec<String>) -> Option<String> {
-    let mut current: Option<&String> = None;
+    while !rl.window_should_close() {
+        {
+            let mut d = rl.begin_drawing(&thread);
 
-    for s in l {
-        if s.len() > current.map_or(0, |s| s.len()) {
-            current = Some(s);
+            d.clear_background(Color::WHITE);
+            d.draw_fps(12, 12);
+            d.draw_texture_ex(
+                &player.animation.current,
+                player.pos,
+                0 as f32,
+                4 as f32,
+                Color::WHITE,
+            );
         }
+
+        player.movement.reset();
+        if rl.is_key_down(KeyboardKey::KEY_W) {
+            player.movement.up();
+        }
+
+        if rl.is_key_down(KeyboardKey::KEY_S) {
+            player.movement.down();
+        }
+
+        if rl.is_key_down(KeyboardKey::KEY_D) {
+            player.movement.right();
+        }
+
+        if rl.is_key_down(KeyboardKey::KEY_A) {
+            player.movement.left();
+        }
+        player.update(rl.get_frame_time());
     }
-
-    return current.cloned();
-}
-
-enum Test {
-    Empty,
-    Coord { x: i32, y: i32 },
-    Name(String),
 }
