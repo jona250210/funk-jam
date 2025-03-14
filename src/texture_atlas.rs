@@ -1,5 +1,5 @@
 use raylib::prelude::*;
-use std::collections::HashMap;
+use std::{collections::HashMap, error};
 
 pub struct TextureAtlas {
     textures: HashMap<String, Texture2D>,
@@ -13,15 +13,12 @@ impl TextureAtlas {
         }        
     }
 
-    pub fn get_texture(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread, path: &str) -> Result<&Texture2D, String> {
+    pub fn get_texture(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread, path: &str) -> &Texture2D {
         if !self.textures.contains_key(path) {
             let texture: Texture2D = rl.load_texture(&thread, path).expect("Failed to load texture");
             self.textures.insert(path.to_string(), texture);
         }
-        return match self.textures.get(path) {
-            Some(t) => Ok(t),
-            _ => Err(format!("Failed to return Texture {}", path))
-        }
+        return self.textures.get(path).unwrap();
     }
 
 }
