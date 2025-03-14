@@ -11,7 +11,7 @@ fn main() {
 
     let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
-    audio_manager.load_sound( "test", "../sword sound.wav");
+    audio_manager.load_sound( "test", "sword_sound.wav");
     audio_manager.play_sound( "test");
 
     println!("({}, {})", l.width, l.height);

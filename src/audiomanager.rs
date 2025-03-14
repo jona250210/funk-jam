@@ -3,12 +3,12 @@ use raylib::core::audio::{Sound, RaylibAudio};
 use std::collections::HashMap;
 
 pub struct AudioManager<'a> {
-    audio_device: &'a mut RaylibAudio,
+    audio_device: &'a RaylibAudio,
     sounds: HashMap<String, Sound<'a>>,
 }
 
 impl<'a> AudioManager<'a> {
-    pub fn new(audio_device: &'a mut RaylibAudio) -> Self {
+    pub fn new(audio_device: &'a RaylibAudio) -> Self {
         AudioManager {
             audio_device,
             sounds: HashMap::new(),
