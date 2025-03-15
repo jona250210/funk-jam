@@ -1,9 +1,11 @@
 
 mod player;
-
-use nonempty::{NonEmpty, nonempty};
 use player::Player;
 
+mod camera;
+use camera::GameCamera;
+
+use nonempty::{NonEmpty, nonempty};
 use raylib::prelude::*;
 
 mod audiomanager;
@@ -17,7 +19,6 @@ use tiled_map::TiledMap;
 
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
-
 
     // Hier alle Texturen einfügen, die automatisch geladen werden sollen
     // Sie können dann später mit atlas.get_texture("pfad/zu/texture") abgerufen werden
@@ -58,6 +59,16 @@ fn main() {
         atlas.get_texture("assets/run6.png"),
     ];
     let mut player = Player::new(Vector2::new(200.0, 200.0), &frames);
+
+    // CAMERA
+    let mut game_camera = GameCamera::new(
+        rl.get_screen_width(),
+        rl.get_screen_height(),
+        Vector2 {
+            x: player.pos.x + 20.0,
+            y: player.pos.y + 20.0,
+        }
+    );
 
     // AUDIO MANAGER
     let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
@@ -107,10 +118,15 @@ fn main() {
         }
         player.update(rl.get_frame_time());
 
-        let mut d = rl.begin_drawing(&thread);
+        // Update camera target to follow player
+        game_camera.update_target(player.pos, 20.0, 20.0);
 
+        let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::WHITE);
+
+        let mut d = d.begin_mode2D(game_camera.camera);
         tiled_map.render(&mut d);
+
         d.draw_fps(12, 12);
         d.draw_texture_ex(
             &player.animation.current,
