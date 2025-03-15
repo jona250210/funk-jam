@@ -1,3 +1,5 @@
+mod trait_collision;
+
 mod player;
 use player::Player;
 
@@ -5,7 +7,6 @@ mod camera;
 use camera::GameCamera;
 
 use raylib::prelude::*;
-
 mod audiomanager;
 use audiomanager::AudioManager;
 
@@ -13,7 +14,7 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::TiledMap;
+use tiled_map::{SCALE, TILE_HEIGHT, TILE_WIDTH, TiledMap};
 
 mod item;
 use item::Item;
@@ -154,6 +155,21 @@ fn main() {
             d.draw_fps(12, 12);
 
             player.draw(&mut d);
+
+            let collisions =
+                tiled_map.get_collision_tiles_with_layer(0, &player.get_collision_rect());
+
+            collisions.map(|x| {
+                for (_, pos) in x {
+                    d.draw_rectangle_lines(
+                        pos.x as i32,
+                        pos.y as i32,
+                        TILE_WIDTH * SCALE as i32,
+                        TILE_HEIGHT * SCALE as i32,
+                        Color::BLUE,
+                    );
+                }
+            });
         }
 
         if frame_times > 0.08 {

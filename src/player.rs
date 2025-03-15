@@ -1,4 +1,7 @@
+use crate::trait_collision::Collision;
 use raylib::prelude::*;
+
+const SCALE: f32 = 2.0;
 
 pub struct Animation<'a> {
     frames: &'a Vec<&'a Texture2D>,
@@ -27,6 +30,7 @@ impl Animation<'_> {
 
 pub struct Player<'a> {
     pub pos: Vector2,
+    pub dimensions: Vector2,
     pub movement: Movement,
     pub idle: Animation<'a>,
     pub run: Animation<'a>,
@@ -46,6 +50,7 @@ impl Player<'_> {
     ) -> Player<'a> {
         Player {
             pos,
+            dimensions: Vector2::new(idle[0].width() as f32, idle[0].height() as f32),
             movement: Movement {
                 direction: Vector2 { x: 0.0, y: 0.0 },
                 speed: 300.0,
@@ -54,6 +59,15 @@ impl Player<'_> {
             run: Animation::new(run),
             orientation: Orientation::Right,
         }
+    }
+
+    pub fn get_collision_rect(&self) -> Rectangle {
+        Rectangle::new(
+            self.pos.x,
+            self.pos.y + 0.8 * SCALE * self.dimensions.y,
+            self.dimensions.x * SCALE,
+            self.dimensions.y * SCALE * 0.2,
+        )
     }
 
     pub fn update(&mut self, frame_time: f32) {
@@ -84,8 +98,6 @@ impl Player<'_> {
             Orientation::Right => 1,
         };
 
-        let scale = 2;
-
         d.draw_texture_pro(
             texture,
             Rectangle::new(
@@ -97,12 +109,21 @@ impl Player<'_> {
             Rectangle::new(
                 self.pos.x,
                 self.pos.y,
-                (texture.width() * scale) as f32,
-                (texture.height() * scale) as f32,
+                (texture.width() as f32 * SCALE) as f32,
+                (texture.height() as f32 * SCALE) as f32,
             ),
             Vector2::zero(),
             0 as f32,
             Color::WHITE,
+        );
+
+        let tmp = self.get_collision_rect();
+        d.draw_rectangle_lines(
+            tmp.x as i32,
+            tmp.y as i32,
+            tmp.width as i32,
+            tmp.height as i32,
+            Color::RED,
         );
     }
 
@@ -153,5 +174,12 @@ impl Movement {
 
     pub fn moves(&mut self) -> bool {
         self.direction != Vector2::zero()
+    }
+}
+
+impl Collision for Player<'_> {
+    fn collision_with_rec(&self, other: &Rectangle) -> bool {
+        Rectangle::new(self.pos.x, self.pos.y, self.dimensions.x, self.dimensions.y)
+            .check_collision_recs(other)
     }
 }
