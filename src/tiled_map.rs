@@ -1,12 +1,13 @@
-use raylib::prelude::*;
-use std::{collections::HashMap, error};
 use rand::Rng;
+use raylib::prelude::*;
+use std::collections::HashMap;
 
 use crate::texture_atlas::TextureAtlas;
+use crate::trait_collision::Collision;
 
-const TILE_WIDTH: i32 = 32;
-const TILE_HEIGHT: i32 = 32;
-const SCALE: f32 = 2.0;
+pub const TILE_WIDTH: i32 = 32;
+pub const TILE_HEIGHT: i32 = 32;
+pub const SCALE: f32 = 2.0;
 
 pub struct TiledMap<'a> {
     tiles_textures: HashMap<i32, &'a Texture2D>,
@@ -18,22 +19,57 @@ pub struct TiledMap<'a> {
     pub tile_height: i32,
     pub scale: f32,
     pub tiles_textures_paths: Vec<&'a str>,
-    animation_loops: Vec<Vec<i32>>,
-    one_time_animations: Vec<Vec<i32>>,
     animation_counter: f32,
-    animated_tiles: Vec<(i32, i32, i32)>,
+}
+
+type TextureID = i32;
+
+#[derive(Clone)]
+pub enum Tile {
+    Static(TextureID),
+    Animated(Vec<TextureID>, usize),
+    AnimatedOnce(Vec<TextureID>, usize),
 }
 
 #[derive(Clone)]
 pub struct TiledMapLayer {
-    tiles: Vec<Vec<i32>>,
+    tiles: Vec<Vec<Tile>>,
 }
 
 impl TiledMapLayer {
     pub fn new(size_x: i32, size_y: i32) -> Self {
         TiledMapLayer {
-            tiles: vec![vec![0; size_y as usize]; size_x as usize],
+            tiles: vec![vec![Tile::Static(0); size_y as usize]; size_x as usize],
         }
+    }
+
+    pub fn get_collision_tiles(&mut self, other: &Rectangle) -> Option<Vec<(&Tile, Vector2)>> {
+        // TODO: Effizienter machen
+        let mut collisions: Vec<(&Tile, Vector2)> = Vec::new();
+        for y in 0..self.tiles.len() {
+            for x in 0..self.tiles[y].len() {
+                let tmp = Rectangle::new(
+                    (x as i32 * TILE_WIDTH) as f32 * SCALE,
+                    (y as i32 * TILE_HEIGHT) as f32 * SCALE,
+                    TILE_WIDTH as f32 * SCALE,
+                    TILE_HEIGHT as f32 * SCALE,
+                );
+                if tmp.check_collision_recs(other) {
+                    collisions.push((
+                        &self.tiles[y][x],
+                        Vector2::new(
+                            (x as i32 * TILE_WIDTH) as f32 * SCALE,
+                            (y as i32 * TILE_HEIGHT) as f32 * SCALE,
+                        ),
+                    ));
+                }
+            }
+        }
+
+        if collisions.is_empty() {
+            return None;
+        }
+        return Some(collisions);
     }
 }
 
@@ -64,15 +100,7 @@ impl<'a> TiledMap<'a> {
                 /*11*/ "assets/stein4.png",
                 /*12*/ "assets/empty_tile.png",
             ],
-            animation_loops: vec![
-                //vec![2, 3, 4, 5],
-            ],
-            one_time_animations: vec![
-                vec![2, 3, 4, 5, 6],
-                vec![7, 8, 9, 10, 12],
-            ],
             animation_counter: 0.0,
-            animated_tiles: Vec::new(),
         };
         tiled_map.load_textures(atlas);
         tiled_map.initialize_tiles();
@@ -82,7 +110,12 @@ impl<'a> TiledMap<'a> {
     }
 
     fn load_textures(&mut self, atlas: &'a TextureAtlas) {
-        let texture_paths: Vec<_> = self.tiles_textures_paths.iter().enumerate().map(|(id, &path)| (id as i32, path)).collect();
+        let texture_paths: Vec<_> = self
+            .tiles_textures_paths
+            .iter()
+            .enumerate()
+            .map(|(id, &path)| (id as i32, path))
+            .collect();
         for (id, path) in texture_paths {
             let texture = atlas.get_texture(path);
             self.add_tile_texture(id, texture);
@@ -92,7 +125,7 @@ impl<'a> TiledMap<'a> {
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
             for y in 0..self.size_y {
-                self.set_tile(0, x, y, 1, false);
+                self.set_tile(0, x, y, Tile::Static(1));
             }
         }
     }
@@ -102,44 +135,60 @@ impl<'a> TiledMap<'a> {
         for _ in 0..40 {
             let x = rng.random_range(0..self.size_x);
             let y = rng.random_range(0..self.size_y);
-            let tile_id = rng.random_range(2..7);
-            self.set_tile(1, x, y, tile_id, true);
+
+            let tile_id = rng.random_range(0..2);
+            let status = rng.random_range(0..3);
+
+            let tile = match (tile_id, status) {
+                (0, 0) => Tile::Static(2),
+                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0),
+                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0),
+
+                (1, 0) => Tile::Static(7),
+                (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0),
+                (1, 2) => Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0),
+                _ => Tile::Static(0),
+            };
+
+            self.set_tile(1, x, y, tile);
         }
-        self.set_tile(1, 1, 1, 2, false);
-        self.set_tile(1, 2, 1, 7, false);
     }
 
     pub fn add_tile_texture(&mut self, id: i32, texture: &'a Texture2D) {
         self.tiles_textures.insert(id, texture);
     }
 
-    pub fn set_tile(&mut self, layer: i32, x: i32, y: i32, id: i32, animated: bool) {
+    pub fn set_tile(&mut self, layer: i32, x: i32, y: i32, tile: Tile) {
         if x >= self.size_x || y >= self.size_y {
             return;
         }
-        if animated {
-            if !self.animated_tiles.contains(&(layer, x, y)) {
-                self.animated_tiles.push((layer, x, y));
-            }
-        } else {
-            self.animated_tiles.retain(|&v| v != (layer, x, y));
-        }
-        self.map[layer as usize].tiles[x as usize][y as usize] = id;
+        self.map[layer as usize].tiles[x as usize][y as usize] = tile;
     }
 
     pub fn get_tile_texture(&self, layer: i32, x: i32, y: i32) -> Option<&Texture2D> {
         if x >= self.size_x || y >= self.size_y {
             return None;
         }
-        let tile_id = self.map[layer as usize].tiles[x as usize][y as usize];
-        self.tiles_textures.get(&tile_id).map(|v| &**v)
+        let tile = &self.map[layer as usize].tiles[x as usize][y as usize];
+        self.tiles_textures
+            .get(&match tile {
+                Tile::Static(id) => *id,
+                Tile::Animated(items, current) => items[*current] as i32,
+                Tile::AnimatedOnce(items, current) => items[*current] as i32,
+            })
+            .map(|v| &**v)
     }
 
-    pub fn get_tile_id(&self, layer: i32, x: i32, y: i32) -> i32 {
+    pub fn get_tile_id(&self, layer: i32, x: i32, y: i32) -> Option<i32> {
         if x >= self.size_x || y >= self.size_y {
-            return -1;
+            return None;
         }
-        self.map[layer as usize].tiles[x as usize][y as usize]
+
+        match self.map[layer as usize].tiles[x as usize][y as usize] {
+            Tile::Static(id) => Some(id),
+            Tile::Animated(_, current) => Some(current as i32),
+            Tile::AnimatedOnce(_, current) => Some(current as i32),
+        }
     }
 
     pub fn update_animated_tiles(&mut self, delta_time: f32) {
@@ -147,28 +196,30 @@ impl<'a> TiledMap<'a> {
         if self.animation_counter < 1.0 {
             return;
         }
-        self.animation_counter = 0.0;
-        let mut updates = Vec::new();
-        for (layer, x, y) in &self.animated_tiles {
-            let tile_id = self.get_tile_id(*layer, *x, *y);
-            for animation_loop in &self.animation_loops {
-                if let Some(pos) = animation_loop.iter().position(|&r| r == tile_id) {
-                    let new_tile_id = animation_loop[(pos + 1) % animation_loop.len()];
-                    updates.push((*layer, *x, *y, new_tile_id));
-                }
-            }
-            for one_time_animation in &self.one_time_animations {
-                if let Some(pos) = one_time_animation.iter().position(|&r| r == tile_id) {
-                    if pos + 1 < one_time_animation.len() {
-                        let new_tile_id = one_time_animation[pos + 1];
-                        updates.push((*layer, *x, *y, new_tile_id));
-                    }
-                }
-            }
-        }
 
-        for (layer, x, y, new_tile_id) in updates {
-            self.set_tile(layer, x, y, new_tile_id, true);
+        self.animation_counter = 0.0;
+
+        for l in &mut self.map {
+            for row in &mut l.tiles {
+                for tile in row.iter_mut() {
+                    match tile {
+                        Tile::Static(_) => (),
+                        Tile::Animated(items, current)
+                            if *current < (items.len() - (1 as usize)) =>
+                        {
+                            *current += 1
+                        }
+                        Tile::Animated(_, current) => *current = 0 as usize,
+
+                        Tile::AnimatedOnce(items, current)
+                            if *current < (items.len() - (1 as usize)) =>
+                        {
+                            *current += 1
+                        }
+                        Tile::AnimatedOnce(_, _) => (),
+                    };
+                }
+            }
         }
     }
 
@@ -186,5 +237,19 @@ impl<'a> TiledMap<'a> {
                 }
             }
         }
+    }
+
+    pub fn get_collision_tiles_with_layer(
+        &mut self,
+        layer: i32,
+        other: &Rectangle,
+    ) -> Option<Vec<(&Tile, Vector2)>> {
+        self.map[layer as usize].get_collision_tiles(other)
+    }
+}
+
+impl Collision for TiledMapLayer {
+    fn collision_with_rec(&self, other: &Rectangle) -> bool {
+        todo!()
     }
 }
