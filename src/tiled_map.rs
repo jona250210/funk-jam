@@ -52,8 +52,8 @@ impl TiledMapLayer {
     pub fn get_collision_tiles(&mut self, other: &Rectangle) -> Option<Vec<(&Tile, Vector2)>> {
         // TODO: Effizienter machen
         let mut collisions: Vec<(&Tile, Vector2)> = Vec::new();
-        for y in 0..self.tiles.len() {
-            for x in 0..self.tiles[y].len() {
+        for x in 0..self.tiles.len() {
+            for y in 0..self.tiles[x].len() {
                 let tmp = Rectangle::new(
                     (x as i32 * TILE_WIDTH) as f32 * SCALE,
                     (y as i32 * TILE_HEIGHT) as f32 * SCALE,
@@ -62,7 +62,7 @@ impl TiledMapLayer {
                 );
                 if tmp.check_collision_recs(other) {
                     collisions.push((
-                        &self.tiles[y][x],
+                        &self.tiles[x][y],
                         Vector2::new(
                             (x as i32 * TILE_WIDTH) as f32 * SCALE,
                             (y as i32 * TILE_HEIGHT) as f32 * SCALE,
@@ -105,6 +105,10 @@ impl<'a> TiledMap<'a> {
                 /*10*/ "assets/stein3.png",
                 /*11*/ "assets/stein4.png",
                 /*12*/ "assets/empty_tile.png",
+                /*13*/ "assets/water0.png",
+                /*14*/ "assets/water1.png",
+                /*15*/ "assets/water2.png",
+                /*16*/ "assets/water3.png",
             ],
             animation_counter: 0.0,
         };
@@ -131,7 +135,12 @@ impl<'a> TiledMap<'a> {
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
             for y in 0..self.size_y {
-                self.set_tile(0, x, y, Tile::Static(1, Vec::new()));
+                if x > 5 && x < 10 && y > 5 && y < 10{
+                    self.set_tile(0, x, y, Tile::Static(1, Vec::new()))
+                }
+                else {
+                    self.set_tile(0, x, y, Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]));
+                }
             }
         }
     }
@@ -146,9 +155,9 @@ impl<'a> TiledMap<'a> {
             let status = rng.random_range(0..3);
 
             let tile = match (tile_id, status) {
-                (0, 0) => Tile::Static(2, Vec::new()),
-                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0, Vec::new()),
-                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, Vec::new()),
+                (0, 0) => Tile::Static(2, vec![Tags::Barrier]),
+                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Barrier]),
+                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, vec![Tags::Barrier]),
 
                 (1, 0) => Tile::Static(7, vec![Tags::Barrier]),
                 (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),

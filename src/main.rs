@@ -179,10 +179,10 @@ fn main() {
                 }
             });
 
-            let collisions_stone =
-                tiled_map.get_collision_tiles_with_layer(1, &player.get_collision_rect());
-
-            collisions_stone.map(|x| {
+            // LAYER 0
+            let collision_tiles =
+                tiled_map.get_collision_tiles_with_layer(0, &player.get_collision_rect());
+            if let Some(x) = collision_tiles {
                 for (tile, pos) in x {
                     match tile {
                         tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
@@ -191,7 +191,45 @@ fn main() {
                                 pos.y as i32,
                                 TILE_WIDTH * SCALE as i32,
                                 TILE_HEIGHT * SCALE as i32,
-                                Color::GREEN,
+                                Color::BLUE,
+                            );
+                        }
+                        tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        _ => (),
+                    }
+                }
+            }
+
+            // LAYER 1
+            let collision_tiles =
+                tiled_map.get_collision_tiles_with_layer(1, &player.get_collision_rect());
+            if let Some(x) = collision_tiles {
+                for (tile, pos) in x {
+                    match tile {
+                        tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::RED,
                             );
                         }
                         tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
@@ -209,13 +247,13 @@ fn main() {
                                 pos.y as i32,
                                 TILE_WIDTH * SCALE as i32,
                                 TILE_HEIGHT * SCALE as i32,
-                                Color::BLUE,
+                                Color::RED,
                             );
                         }
                         _ => (),
                     }
                 }
-            });
+            }
         }
 
         if frame_times > 0.08 {
