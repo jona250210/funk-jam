@@ -8,4 +8,6 @@ chrono = "0.4.40"
 nonempty = "0.11.0"
 rand = "0.9.0"
 raylib = "5.0.2"
+ron = "0.8.1"
+serde = {version = "1.0.219", features = ["derive"]}
 timer = "0.2.0"
