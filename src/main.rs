@@ -15,6 +15,9 @@ use texture_atlas::TextureAtlas;
 mod tiled_map;
 use tiled_map::TiledMap;
 
+mod item;
+use item::Item;
+
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
@@ -46,6 +49,11 @@ fn main() {
         "assets/stein4.png",
         "assets/empty_tile.png",
         "assets/sand_tile.png",
+        "assets/potion.png",
+        "assets/water0.png",
+        "assets/water1.png",
+        "assets/water2.png",
+        "assets/water3.png",
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -98,6 +106,12 @@ fn main() {
     // TILED MAP
     let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
 
+    // ITEMS
+    let mut items = vec![
+        Item::new(Vector2::new(100.0, 100.0), atlas.get_texture("assets/potion.png"), 1.25),
+        Item::new(Vector2::new(200.0, 200.0), atlas.get_texture("assets/potion.png"), 1.25),
+    ];
+
     while !rl.window_should_close() {
         let delta_time = rl.get_frame_time();
         rl.set_target_fps(120);
@@ -130,6 +144,10 @@ fn main() {
             let mut d = d.begin_mode2D(game_camera.camera);
             tiled_map.update_animated_tiles(delta_time);
             tiled_map.render(&mut d);
+
+            for item in items.iter() {
+                item.render(&mut d);
+            }
 
             d.draw_fps(12, 12);
             d.clear_background(Color::WHITE);
