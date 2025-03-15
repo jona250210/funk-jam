@@ -1,4 +1,3 @@
-use nonempty::NonEmpty;
 use raylib::prelude::*;
 
 pub struct Animation<'a> {
@@ -52,6 +51,9 @@ impl Player<'_> {
             .scale_by(self.movement.speed)
             .scale_by(frame_time);
 
+    }
+
+    pub fn animation_update(&mut self){
         self.animation.update();
     }
 }

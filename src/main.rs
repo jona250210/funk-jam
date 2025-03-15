@@ -1,11 +1,9 @@
-
 mod player;
 use player::Player;
 
 mod camera;
 use camera::GameCamera;
 
-use nonempty::{NonEmpty, nonempty};
 use raylib::prelude::*;
 
 mod audiomanager;
@@ -40,7 +38,7 @@ fn main() {
         "assets/stein3.png",
         "assets/stein4.png",
         "assets/empty_tile.png",
-        "assets/sand_tile.png"
+        "assets/sand_tile.png",
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -67,14 +65,17 @@ fn main() {
         Vector2 {
             x: player.pos.x + 20.0,
             y: player.pos.y + 20.0,
-        }
+        },
     );
 
     // AUDIO MANAGER
-    let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
+    let mut audio_device =
+        RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
-    audio_manager.load_sound( "test", "sword_sound.wav");
-    audio_manager.play_sound( "test");
+    audio_manager.load_sound("test", "sword_sound.wav");
+    audio_manager.play_sound("test");
+
+    let mut frame_times = 0 as f32;
 
     // TILED MAP
     let mut tiled_map = TiledMap::new(5, 10, 10);
@@ -95,11 +96,9 @@ fn main() {
         tiled_map.add_tile_texture(id as i32, tile);
     }
 
-    
-
     while !rl.window_should_close() {
         rl.set_target_fps(120);
-        
+
         player.movement.reset();
         if rl.is_key_down(KeyboardKey::KEY_W) {
             player.movement.up();
@@ -121,20 +120,37 @@ fn main() {
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);
 
-        let mut d = rl.begin_drawing(&thread);
-        d.clear_background(Color::WHITE);
+        {
+            let mut d = rl.begin_drawing(&thread);
+            d.clear_background(Color::WHITE);
 
-        let mut d = d.begin_mode2D(game_camera.camera);
-        tiled_map.render(&mut d);
+            let mut d = d.begin_mode2D(game_camera.camera);
+            tiled_map.render(&mut d);
 
-        d.draw_fps(12, 12);
-        d.draw_texture_ex(
-            &player.animation.current,
-            player.pos,
-            0 as f32,
-            4 as f32,
-            Color::WHITE,
-        );
+            d.draw_fps(12, 12);
+            d.draw_texture_ex(
+                &player.animation.current,
+                player.pos,
+                0 as f32,
+                4 as f32,
+                Color::WHITE,
+            );
+            d.clear_background(Color::WHITE);
+            d.draw_fps(12, 12);
+            d.draw_texture_ex(
+                &player.animation.current,
+                player.pos,
+                0 as f32,
+                4 as f32,
+                Color::WHITE,
+            );
+        }
 
+        if frame_times > 0.08 {
+            player.animation_update();
+            frame_times = 0 as f32;
+        } else {
+            frame_times += rl.get_frame_time()
+        }
     }
 }
