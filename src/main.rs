@@ -28,6 +28,13 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
+        "assets/idle0.png",
+        "assets/idle1.png",
+        "assets/idle2.png",
+        "assets/idle3.png",
+        "assets/idle4.png",
+        "assets/idle5.png",
+        "assets/idle6.png",
         "assets/palme0.png",
         "assets/palme1.png",
         "assets/palme2.png",
@@ -47,7 +54,7 @@ fn main() {
     }
 
     // PLAYER
-    let frames = vec![
+    let run_frames = vec![
         atlas.get_texture("assets/run0.png"),
         atlas.get_texture("assets/run1.png"),
         atlas.get_texture("assets/run2.png"),
@@ -56,7 +63,18 @@ fn main() {
         atlas.get_texture("assets/run5.png"),
         atlas.get_texture("assets/run6.png"),
     ];
-    let mut player = Player::new(Vector2::new(200.0, 200.0), &frames);
+
+    let idle_frames = vec![
+        atlas.get_texture("assets/idle0.png"),
+        atlas.get_texture("assets/idle1.png"),
+        atlas.get_texture("assets/idle2.png"),
+        atlas.get_texture("assets/idle3.png"),
+        atlas.get_texture("assets/idle4.png"),
+        atlas.get_texture("assets/idle5.png"),
+        atlas.get_texture("assets/idle6.png"),
+    ];
+
+    let mut player = Player::new(Vector2::new(200.0, 200.0), &idle_frames, &run_frames);
 
     // CAMERA
     let mut game_camera = GameCamera::new(
@@ -101,19 +119,19 @@ fn main() {
 
         player.movement.reset();
         if rl.is_key_down(KeyboardKey::KEY_W) {
-            player.movement.up();
+            player.up();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_S) {
-            player.movement.down();
+            player.down();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_D) {
-            player.movement.right();
+            player.right();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_A) {
-            player.movement.left();
+            player.left();
         }
         player.update(rl.get_frame_time());
 
@@ -128,22 +146,10 @@ fn main() {
             tiled_map.render(&mut d);
 
             d.draw_fps(12, 12);
-            d.draw_texture_ex(
-                &player.animation.current,
-                player.pos,
-                0 as f32,
-                4 as f32,
-                Color::WHITE,
-            );
             d.clear_background(Color::WHITE);
             d.draw_fps(12, 12);
-            d.draw_texture_ex(
-                &player.animation.current,
-                player.pos,
-                0 as f32,
-                4 as f32,
-                Color::WHITE,
-            );
+
+            player.draw(&mut d);
         }
 
         if frame_times > 0.08 {
