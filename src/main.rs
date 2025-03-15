@@ -96,25 +96,10 @@ fn main() {
     let mut frame_times = 0 as f32;
 
     // TILED MAP
-    let mut tiled_map = TiledMap::new(5, 10, 10);
-    let tiles = vec![
-        atlas.get_texture("assets/empty_tile.png"),
-        atlas.get_texture("assets/sand_tile.png"),
-        atlas.get_texture("assets/palme0.png"),
-        atlas.get_texture("assets/palme1.png"),
-        atlas.get_texture("assets/palme2.png"),
-        atlas.get_texture("assets/palme3.png"),
-        atlas.get_texture("assets/stein0.png"),
-        atlas.get_texture("assets/stein1.png"),
-        atlas.get_texture("assets/stein2.png"),
-        atlas.get_texture("assets/stein3.png"),
-        atlas.get_texture("assets/stein4.png"),
-    ];
-    for (id, tile) in tiles.iter().enumerate() {
-        tiled_map.add_tile_texture(id as i32, tile);
-    }
+    let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
 
     while !rl.window_should_close() {
+        let delta_time = rl.get_frame_time();
         rl.set_target_fps(120);
 
         player.movement.reset();
@@ -133,7 +118,7 @@ fn main() {
         if rl.is_key_down(KeyboardKey::KEY_A) {
             player.left();
         }
-        player.update(rl.get_frame_time());
+        player.update(delta_time);
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);
@@ -142,8 +127,9 @@ fn main() {
             let mut d = rl.begin_drawing(&thread);
             d.clear_background(Color::WHITE);
 
-            let mut d = d.begin_mode2D(game_camera.camera);
-            tiled_map.render(&mut d);
+        let mut d = d.begin_mode2D(game_camera.camera);
+        tiled_map.update_animated_tiles(delta_time);
+        tiled_map.render(&mut d);
 
             d.draw_fps(12, 12);
             d.clear_background(Color::WHITE);
