@@ -77,7 +77,7 @@ impl<'a> TiledMap<'a> {
         return self.tiles_textures.get(&tile_id).map(|v| &**v);
     }
 
-    pub fn render(&self, d: &mut RaylibDrawHandle) {
+    pub fn render(&self, d: &mut RaylibMode2D<'_, RaylibDrawHandle>) {
         for layer in 0..self.layers{
             for x in 0..self.size_x {
                 for y in 0..self.size_y {
