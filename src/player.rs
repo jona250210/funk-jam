@@ -28,18 +28,31 @@ impl Animation<'_> {
 pub struct Player<'a> {
     pub pos: Vector2,
     pub movement: Movement,
-    pub animation: Animation<'a>,
+    pub idle: Animation<'a>,
+    pub run: Animation<'a>,
+    orientation: Orientation,
+}
+
+enum Orientation {
+    Left,
+    Right,
 }
 
 impl Player<'_> {
-    pub fn new<'a>(pos: Vector2, frames: &'a Vec<&Texture2D>) -> Player<'a> {
+    pub fn new<'a>(
+        pos: Vector2,
+        idle: &'a Vec<&Texture2D>,
+        run: &'a Vec<&Texture2D>,
+    ) -> Player<'a> {
         Player {
             pos,
             movement: Movement {
                 direction: Vector2 { x: 0.0, y: 0.0 },
-                speed: 150.0,
+                speed: 300.0,
             },
-            animation: Animation::new(frames),
+            idle: Animation::new(idle),
+            run: Animation::new(run),
+            orientation: Orientation::Right,
         }
     }
 
@@ -50,11 +63,65 @@ impl Player<'_> {
             .normalized()
             .scale_by(self.movement.speed)
             .scale_by(frame_time);
-
     }
 
-    pub fn animation_update(&mut self){
-        self.animation.update();
+    pub fn animation_update(&mut self) {
+        self.idle.update();
+        self.run.update();
+    }
+
+    pub fn draw(&mut self, d: &mut RaylibMode2D<RaylibDrawHandle>) {
+        let texture;
+
+        if self.movement.moves() {
+            texture = &self.run.current;
+        } else {
+            texture = &self.idle.current;
+        }
+
+        let rotation_modifier = match self.orientation {
+            Orientation::Left => -1,
+            Orientation::Right => 1,
+        };
+
+        let scale = 2;
+
+        d.draw_texture_pro(
+            texture,
+            Rectangle::new(
+                0.0,
+                0.0,
+                (rotation_modifier * texture.width()) as f32,
+                texture.height() as f32,
+            ),
+            Rectangle::new(
+                self.pos.x,
+                self.pos.y,
+                (texture.width() * scale) as f32,
+                (texture.height() * scale) as f32,
+            ),
+            Vector2::zero(),
+            0 as f32,
+            Color::WHITE,
+        );
+    }
+
+    pub fn up(&mut self) {
+        self.movement.up();
+    }
+
+    pub fn down(&mut self) {
+        self.movement.down();
+    }
+
+    pub fn left(&mut self) {
+        self.movement.left();
+        self.orientation = Orientation::Left;
+    }
+
+    pub fn right(&mut self) {
+        self.movement.right();
+        self.orientation = Orientation::Right;
     }
 }
 
@@ -82,5 +149,9 @@ impl Movement {
 
     pub fn right(&mut self) {
         self.direction.x = 1 as f32;
+    }
+
+    pub fn moves(&mut self) -> bool {
+        self.direction != Vector2::zero()
     }
 }
