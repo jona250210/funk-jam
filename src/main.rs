@@ -14,7 +14,7 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::{SCALE, TILE_HEIGHT, TILE_WIDTH, TiledMap};
+use tiled_map::{SCALE, TILE_HEIGHT, TILE_WIDTH, Tags, TiledMap};
 
 mod item;
 use item::Item;
@@ -109,8 +109,16 @@ fn main() {
 
     // ITEMS
     let mut items = vec![
-        Item::new(Vector2::new(100.0, 100.0), atlas.get_texture("assets/potion.png"), 1.25),
-        Item::new(Vector2::new(200.0, 200.0), atlas.get_texture("assets/potion.png"), 1.25),
+        Item::new(
+            Vector2::new(100.0, 100.0),
+            atlas.get_texture("assets/potion.png"),
+            1.25,
+        ),
+        Item::new(
+            Vector2::new(200.0, 200.0),
+            atlas.get_texture("assets/potion.png"),
+            1.25,
+        ),
     ];
 
     while !rl.window_should_close() {
@@ -168,6 +176,44 @@ fn main() {
                         TILE_HEIGHT * SCALE as i32,
                         Color::BLUE,
                     );
+                }
+            });
+
+            let collisions_stone =
+                tiled_map.get_collision_tiles_with_layer(1, &player.get_collision_rect());
+
+            collisions_stone.map(|x| {
+                for (tile, pos) in x {
+                    match tile {
+                        tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::GREEN,
+                            );
+                        }
+                        tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::RED,
+                            );
+                        }
+                        tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        _ => (),
+                    }
                 }
             });
         }

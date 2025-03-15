@@ -24,11 +24,17 @@ pub struct TiledMap<'a> {
 
 type TextureID = i32;
 
+#[derive(Clone, PartialEq, Eq)]
+pub enum Tags {
+    Barrier,
+    Destroyable,
+}
+
 #[derive(Clone)]
 pub enum Tile {
-    Static(TextureID),
-    Animated(Vec<TextureID>, usize),
-    AnimatedOnce(Vec<TextureID>, usize),
+    Static(TextureID, Vec<Tags>),
+    Animated(Vec<TextureID>, usize, Vec<Tags>),
+    AnimatedOnce(Vec<TextureID>, usize, Vec<Tags>),
 }
 
 #[derive(Clone)]
@@ -39,7 +45,7 @@ pub struct TiledMapLayer {
 impl TiledMapLayer {
     pub fn new(size_x: i32, size_y: i32) -> Self {
         TiledMapLayer {
-            tiles: vec![vec![Tile::Static(0); size_y as usize]; size_x as usize],
+            tiles: vec![vec![Tile::Static(0, Vec::new()); size_y as usize]; size_x as usize],
         }
     }
 
@@ -125,7 +131,7 @@ impl<'a> TiledMap<'a> {
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
             for y in 0..self.size_y {
-                self.set_tile(0, x, y, Tile::Static(1));
+                self.set_tile(0, x, y, Tile::Static(1, Vec::new()));
             }
         }
     }
@@ -140,14 +146,14 @@ impl<'a> TiledMap<'a> {
             let status = rng.random_range(0..3);
 
             let tile = match (tile_id, status) {
-                (0, 0) => Tile::Static(2),
-                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0),
-                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0),
+                (0, 0) => Tile::Static(2, Vec::new()),
+                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0, Vec::new()),
+                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, Vec::new()),
 
-                (1, 0) => Tile::Static(7),
-                (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0),
-                (1, 2) => Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0),
-                _ => Tile::Static(0),
+                (1, 0) => Tile::Static(7, vec![Tags::Barrier]),
+                (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+                (1, 2) => Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]),
+                _ => Tile::Static(0, Vec::new()),
             };
 
             self.set_tile(1, x, y, tile);
@@ -172,9 +178,9 @@ impl<'a> TiledMap<'a> {
         let tile = &self.map[layer as usize].tiles[x as usize][y as usize];
         self.tiles_textures
             .get(&match tile {
-                Tile::Static(id) => *id,
-                Tile::Animated(items, current) => items[*current] as i32,
-                Tile::AnimatedOnce(items, current) => items[*current] as i32,
+                Tile::Static(id, _) => *id,
+                Tile::Animated(items, current, _) => items[*current] as i32,
+                Tile::AnimatedOnce(items, current, _) => items[*current] as i32,
             })
             .map(|v| &**v)
     }
@@ -185,9 +191,9 @@ impl<'a> TiledMap<'a> {
         }
 
         match self.map[layer as usize].tiles[x as usize][y as usize] {
-            Tile::Static(id) => Some(id),
-            Tile::Animated(_, current) => Some(current as i32),
-            Tile::AnimatedOnce(_, current) => Some(current as i32),
+            Tile::Static(id, _) => Some(id),
+            Tile::Animated(_, current, _) => Some(current as i32),
+            Tile::AnimatedOnce(_, current, _) => Some(current as i32),
         }
     }
 
@@ -203,20 +209,20 @@ impl<'a> TiledMap<'a> {
             for row in &mut l.tiles {
                 for tile in row.iter_mut() {
                     match tile {
-                        Tile::Static(_) => (),
-                        Tile::Animated(items, current)
+                        Tile::Static(_, _) => (),
+                        Tile::Animated(items, current, _)
                             if *current < (items.len() - (1 as usize)) =>
                         {
                             *current += 1
                         }
-                        Tile::Animated(_, current) => *current = 0 as usize,
+                        Tile::Animated(_, current, _) => *current = 0 as usize,
 
-                        Tile::AnimatedOnce(items, current)
+                        Tile::AnimatedOnce(items, current, _)
                             if *current < (items.len() - (1 as usize)) =>
                         {
                             *current += 1
                         }
-                        Tile::AnimatedOnce(_, _) => (),
+                        Tile::AnimatedOnce(_, _, _) => (),
                     };
                 }
             }
