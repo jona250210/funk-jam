@@ -1,11 +1,9 @@
-
 mod player;
 use player::Player;
 
 mod camera;
 use camera::GameCamera;
 
-use nonempty::{NonEmpty, nonempty};
 use raylib::prelude::*;
 
 mod audiomanager;
@@ -30,6 +28,13 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
+        "assets/idle0.png",
+        "assets/idle1.png",
+        "assets/idle2.png",
+        "assets/idle3.png",
+        "assets/idle4.png",
+        "assets/idle5.png",
+        "assets/idle6.png",
         "assets/palme0.png",
         "assets/palme1.png",
         "assets/palme2.png",
@@ -40,7 +45,7 @@ fn main() {
         "assets/stein3.png",
         "assets/stein4.png",
         "assets/empty_tile.png",
-        "assets/sand_tile.png"
+        "assets/sand_tile.png",
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -49,7 +54,7 @@ fn main() {
     }
 
     // PLAYER
-    let frames = vec![
+    let run_frames = vec![
         atlas.get_texture("assets/run0.png"),
         atlas.get_texture("assets/run1.png"),
         atlas.get_texture("assets/run2.png"),
@@ -58,7 +63,18 @@ fn main() {
         atlas.get_texture("assets/run5.png"),
         atlas.get_texture("assets/run6.png"),
     ];
-    let mut player = Player::new(Vector2::new(200.0, 200.0), &frames);
+
+    let idle_frames = vec![
+        atlas.get_texture("assets/idle0.png"),
+        atlas.get_texture("assets/idle1.png"),
+        atlas.get_texture("assets/idle2.png"),
+        atlas.get_texture("assets/idle3.png"),
+        atlas.get_texture("assets/idle4.png"),
+        atlas.get_texture("assets/idle5.png"),
+        atlas.get_texture("assets/idle6.png"),
+    ];
+
+    let mut player = Player::new(Vector2::new(200.0, 200.0), &idle_frames, &run_frames);
 
     // CAMERA
     let mut game_camera = GameCamera::new(
@@ -67,14 +83,17 @@ fn main() {
         Vector2 {
             x: player.pos.x + 20.0,
             y: player.pos.y + 20.0,
-        }
+        },
     );
 
     // AUDIO MANAGER
-    let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
+    let mut audio_device =
+        RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
-    audio_manager.load_sound( "test", "sword_sound.wav");
-    audio_manager.play_sound( "test");
+    audio_manager.load_sound("test", "sword_sound.wav");
+    audio_manager.play_sound("test");
+
+    let mut frame_times = 0 as f32;
 
     // TILED MAP
     let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
@@ -82,43 +101,48 @@ fn main() {
     while !rl.window_should_close() {
         let delta_time = rl.get_frame_time();
         rl.set_target_fps(120);
-        
+
         player.movement.reset();
         if rl.is_key_down(KeyboardKey::KEY_W) {
-            player.movement.up();
+            player.up();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_S) {
-            player.movement.down();
+            player.down();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_D) {
-            player.movement.right();
+            player.right();
         }
 
         if rl.is_key_down(KeyboardKey::KEY_A) {
-            player.movement.left();
+            player.left();
         }
         player.update(delta_time);
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);
 
-        let mut d = rl.begin_drawing(&thread);
-        d.clear_background(Color::WHITE);
+        {
+            let mut d = rl.begin_drawing(&thread);
+            d.clear_background(Color::WHITE);
 
         let mut d = d.begin_mode2D(game_camera.camera);
         tiled_map.update_animated_tiles(delta_time);
         tiled_map.render(&mut d);
 
-        d.draw_fps(12, 12);
-        d.draw_texture_ex(
-            &player.animation.current,
-            player.pos,
-            0 as f32,
-            4 as f32,
-            Color::WHITE,
-        );
+            d.draw_fps(12, 12);
+            d.clear_background(Color::WHITE);
+            d.draw_fps(12, 12);
 
+            player.draw(&mut d);
+        }
+
+        if frame_times > 0.08 {
+            player.animation_update();
+            frame_times = 0 as f32;
+        } else {
+            frame_times += rl.get_frame_time()
+        }
     }
 }
