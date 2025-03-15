@@ -14,6 +14,9 @@ use audiomanager::AudioManager;
 mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
+mod tiled_map;
+use tiled_map::TiledMap;
+
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
@@ -27,7 +30,17 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
-        "Hammer.png"
+        "assets/palme0.png",
+        "assets/palme1.png",
+        "assets/palme2.png",
+        "assets/palme3.png",
+        "assets/stein0.png",
+        "assets/stein1.png",
+        "assets/stein2.png",
+        "assets/stein3.png",
+        "assets/stein4.png",
+        "assets/empty_tile.png",
+        "assets/sand_tile.png"
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -57,16 +70,32 @@ fn main() {
         }
     );
 
-    // DEMO
-    let texture1 = atlas.get_texture("Hammer.png");
-    let texture2 = atlas.get_texture("Hammer.png");
-    let texture3 = atlas.get_texture("Hammer.png");
-
     // AUDIO MANAGER
     let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
     audio_manager.load_sound( "test", "sword_sound.wav");
     audio_manager.play_sound( "test");
+
+    // TILED MAP
+    let mut tiled_map = TiledMap::new(5, 10, 10);
+    let tiles = vec![
+        atlas.get_texture("assets/empty_tile.png"),
+        atlas.get_texture("assets/sand_tile.png"),
+        atlas.get_texture("assets/palme0.png"),
+        atlas.get_texture("assets/palme1.png"),
+        atlas.get_texture("assets/palme2.png"),
+        atlas.get_texture("assets/palme3.png"),
+        atlas.get_texture("assets/stein0.png"),
+        atlas.get_texture("assets/stein1.png"),
+        atlas.get_texture("assets/stein2.png"),
+        atlas.get_texture("assets/stein3.png"),
+        atlas.get_texture("assets/stein4.png"),
+    ];
+    for (id, tile) in tiles.iter().enumerate() {
+        tiled_map.add_tile_texture(id as i32, tile);
+    }
+
+    
 
     while !rl.window_should_close() {
         rl.set_target_fps(120);
@@ -94,7 +123,10 @@ fn main() {
 
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::WHITE);
+
         let mut d = d.begin_mode2D(game_camera.camera);
+        tiled_map.render(&mut d);
+
         d.draw_fps(12, 12);
         d.draw_texture_ex(
             &player.animation.current,
@@ -104,10 +136,5 @@ fn main() {
             Color::WHITE,
         );
 
-        d.clear_background(Color::WHITE);
-        d.draw_text("Hello, world!", 42, 42, 20, Color::BLACK);
-        d.draw_texture(texture1, 100, 100, Color::WHITE);
-        d.draw_texture(texture2, 150, 150, Color::WHITE);
-        d.draw_texture(texture3, 150, 150, Color::WHITE);
     }
 }
