@@ -127,9 +127,9 @@ fn main() {
             let mut d = rl.begin_drawing(&thread);
             d.clear_background(Color::WHITE);
 
-        let mut d = d.begin_mode2D(game_camera.camera);
-        tiled_map.update_animated_tiles(delta_time);
-        tiled_map.render(&mut d);
+            let mut d = d.begin_mode2D(game_camera.camera);
+            tiled_map.update_animated_tiles(delta_time);
+            tiled_map.render(&mut d);
 
             d.draw_fps(12, 12);
             d.clear_background(Color::WHITE);
