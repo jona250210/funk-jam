@@ -24,7 +24,7 @@ use item::Item;
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
-    let test: MazeConfig = match MazeConfig::new("assets/maze1.KB") {
+    let test: MazeConfig = match MazeConfig::new("assets/maze0.KB") {
         Ok(config) => config,
         Err(why) => panic!("{}", why),
     };
@@ -90,7 +90,14 @@ fn main() {
         atlas.get_texture("assets/idle6.png"),
     ];
 
-    let mut player = Player::new(Vector2::new(400.0, 400.0), &idle_frames, &run_frames);
+    let mut player = Player::new(
+        Vector2::new(
+            (test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0,
+            (test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0,
+        ),
+        &idle_frames,
+        &run_frames,
+    );
 
     // CAMERA
     let mut game_camera = GameCamera::new(
@@ -157,7 +164,6 @@ fn main() {
         }
 
         player.update(delta_time, &tiled_map);
-
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);

@@ -342,6 +342,7 @@ impl Collision for TiledMapLayer {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MazeConfig {
     pub size: (i32, i32),
+    pub player: (i32, i32),
     pub ground: String,
     pub objects: String,
 }

@@ -6,6 +6,7 @@
 // 5: stone
 MazeConfig(
     size: (6, 6),
+    player: (4, 3),
 
     ground:
        "111111
