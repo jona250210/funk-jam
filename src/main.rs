@@ -1,8 +1,6 @@
 mod trait_collision;
 
 mod player;
-use std::vec;
-
 use player::Player;
 
 mod camera;
@@ -90,7 +88,7 @@ fn main() {
         atlas.get_texture("assets/idle6.png"),
     ];
 
-    let mut player = Player::new(Vector2::new(400.0, 400.0), &idle_frames, &run_frames);
+    let mut player = Player::new(Vector2::new(200.0, 200.0), &idle_frames, &run_frames);
 
     // CAMERA
     let mut game_camera = GameCamera::new(
@@ -152,12 +150,7 @@ fn main() {
         if rl.is_key_down(KeyboardKey::KEY_A) {
             player.left();
         }
-        if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            player.use_tool(&tiled_map);
-        }
-
-        player.update(delta_time, &tiled_map);
-
+        player.update(delta_time);
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);
@@ -179,6 +172,101 @@ fn main() {
             d.draw_fps(12, 12);
 
             player.draw(&mut d);
+
+            let collisions =
+                tiled_map.get_collision_tiles_with_layer(0, &player.get_collision_rect());
+
+            collisions.map(|x| {
+                for (_, pos) in x {
+                    d.draw_rectangle_lines(
+                        pos.x as i32,
+                        pos.y as i32,
+                        TILE_WIDTH * SCALE as i32,
+                        TILE_HEIGHT * SCALE as i32,
+                        Color::BLUE,
+                    );
+                }
+            });
+
+            // LAYER 0
+            let collision_tiles =
+                tiled_map.get_collision_tiles_with_layer(0, &player.get_collision_rect());
+            if let Some(x) = collision_tiles {
+                for (tile, pos) in x {
+                    match tile {
+                        tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        tiled_map::Tile::AnimatedOnce(_, _, tags)
+                            if tags.contains(&Tags::Barrier) =>
+                        {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::BLUE,
+                            );
+                        }
+                        _ => (),
+                    }
+                }
+            }
+
+            // LAYER 1
+            let collision_tiles =
+                tiled_map.get_collision_tiles_with_layer(1, &player.get_collision_rect());
+            if let Some(x) = collision_tiles {
+                for (tile, pos) in x {
+                    match tile {
+                        tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::RED,
+                            );
+                        }
+                        tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::RED,
+                            );
+                        }
+                        tiled_map::Tile::AnimatedOnce(_, _, tags)
+                            if tags.contains(&Tags::Barrier) =>
+                        {
+                            d.draw_rectangle(
+                                pos.x as i32,
+                                pos.y as i32,
+                                TILE_WIDTH * SCALE as i32,
+                                TILE_HEIGHT * SCALE as i32,
+                                Color::RED,
+                            );
+                        }
+                        _ => (),
+                    }
+                }
+            }
         }
 
         if frame_times > 0.08 {

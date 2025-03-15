@@ -1,4 +1,4 @@
-use crate::{tiled_map::{self, Tags, Tile, TiledMap}, trait_collision::Collision};
+use crate::trait_collision::Collision;
 use raylib::prelude::*;
 
 const SCALE: f32 = 2.0;
@@ -70,185 +70,13 @@ impl Player<'_> {
         )
     }
 
-    pub fn get_tool_collision_rect(&self) -> Rectangle {
-        
-        return match self.orientation {
-            Orientation::Left => {
-                Rectangle::new(
-                    self.pos.x-25.0,
-                    self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                    self.dimensions.x * SCALE,
-                    self.dimensions.y * SCALE * 0.5,
-                )
-            }
-            Orientation::Right => {Rectangle::new(
-                self.pos.x + 25.0,
-                self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE,
-                self.dimensions.y * SCALE * 0.5,
-            )
-            }
-        }
-    }
-
-    pub fn update(&mut self, frame_time: f32, tiled_map: &TiledMap) {
-        let old_pos = self.pos.clone();
-
-        self.pos.x = old_pos.x;
-        self.pos.y = old_pos.y;
-
+    pub fn update(&mut self, frame_time: f32) {
         self.pos += self
             .movement
             .direction
             .normalized()
             .scale_by(self.movement.speed)
             .scale_by(frame_time);
-
-        let mut collided = false;
-        let mut collision_tiles: Vec<(&Tile, Vector2)> = vec![];
-        for layer in 0..tiled_map.layers {
-            let mut tmp =
-                tiled_map.get_collision_tiles_with_layer(layer, &self.get_collision_rect()).unwrap();
-            collision_tiles.append(&mut tmp);
-        }
-        for (tile, _pos) in collision_tiles {
-            match tile {
-                tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                    collided = true;
-                }
-                tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                    collided = true;
-                }
-                tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                    collided = true;
-                }
-                _ => (),
-            }
-        }
-
-        if collided {
-            collided = false;
-            self.pos.x = old_pos.x;
-            self.pos.y = old_pos.y;
-            self.pos += self
-                .movement
-                .direction
-                .normalized()
-                .scale_by(self.movement.speed)
-                .scale_by(frame_time);
-            self.pos.x = old_pos.x;
-            let mut collision_tiles: Vec<(&Tile, Vector2)> = vec![];
-            for layer in 0..tiled_map.layers {
-                let mut tmp =
-                    tiled_map.get_collision_tiles_with_layer(layer, &self.get_collision_rect()).unwrap();
-                collision_tiles.append(&mut tmp);
-            }
-            for (tile, _pos) in collision_tiles {
-                match tile {
-                    tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.x = old_pos.x;
-                        self.pos.y = old_pos.y;
-                        collided = true;
-                    }
-                    tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.x = old_pos.x;
-                        self.pos.y = old_pos.y;
-                        collided = true;
-                    }
-                    tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.x = old_pos.x;
-                        self.pos.y = old_pos.y;
-                        collided = true;
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        if collided {
-            self.pos.x = old_pos.x;
-            self.pos.y = old_pos.y;
-            self.pos += self
-                .movement
-                .direction
-                .normalized()
-                .scale_by(self.movement.speed)
-                .scale_by(frame_time);
-            self.pos.y = old_pos.y;
-            let mut collision_tiles: Vec<(&Tile, Vector2)> = vec![];
-            for layer in 0..tiled_map.layers {
-                let mut tmp =
-                    tiled_map.get_collision_tiles_with_layer(layer, &self.get_collision_rect()).unwrap();
-                collision_tiles.append(&mut tmp);
-            }
-            for (tile, _pos) in collision_tiles {
-                match tile {
-                    tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.y = old_pos.y;
-                    }
-                    tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.y = old_pos.y;
-                    }
-                    tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                        self.pos.y = old_pos.y;
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        let mut collision_tiles: Vec<(&Tile, Vector2)> = vec![];
-        for layer in 0..tiled_map.layers {
-            let mut tmp =
-                tiled_map.get_collision_tiles_with_layer(layer, &self.get_collision_rect()).unwrap();
-            collision_tiles.append(&mut tmp);
-        }
-        for (tile, _pos) in collision_tiles {
-            match tile {
-                tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                }
-                tiled_map::Tile::Animated(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                }
-                tiled_map::Tile::AnimatedOnce(_, _, tags) if tags.contains(&Tags::Barrier) => {
-                    self.pos.x = old_pos.x;
-                    self.pos.y = old_pos.y;
-                }
-                _ => (),
-            }
-        }
-
-        
-
-
-    }
-
-    pub fn use_tool(&mut self, tiled_map: &TiledMap) {
-        let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
-        for layer in 0..tiled_map.layers {
-            let mut tmp =
-                tiled_map.get_collision_tiles_with_layer(layer, &self.get_tool_collision_rect()).unwrap();
-                tool_collision_tiles.append(&mut tmp);
-        }
-
-        for (tile, _pos) in tool_collision_tiles {
-            match tile {
-                // In theory only Static Objects should be destroyable
-                tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Destroyable) => {
-                    todo!()
-                }
-                _ => (),
-            }
-        }
     }
 
     pub fn animation_update(&mut self) {
@@ -290,14 +118,6 @@ impl Player<'_> {
         );
 
         let tmp = self.get_collision_rect();
-        d.draw_rectangle_lines(
-            tmp.x as i32,
-            tmp.y as i32,
-            tmp.width as i32,
-            tmp.height as i32,
-            Color::RED,
-        );
-        let tmp = self.get_tool_collision_rect();
         d.draw_rectangle_lines(
             tmp.x as i32,
             tmp.y as i32,
