@@ -49,7 +49,7 @@ impl TiledMapLayer {
         }
     }
 
-    pub fn get_collision_tiles(&mut self, other: &Rectangle) -> Option<Vec<(&Tile, Vector2)>> {
+    pub fn get_collision_tiles(&self, other: &Rectangle) -> Option<Vec<(&Tile, Vector2)>> {
         // TODO: Effizienter machen
         let mut collisions: Vec<(&Tile, Vector2)> = Vec::new();
         for x in 0..self.tiles.len() {
@@ -135,7 +135,7 @@ impl<'a> TiledMap<'a> {
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
             for y in 0..self.size_y {
-                if x > 5 && x < 10 && y > 5 && y < 10{
+                if x > 3 && x < 15 && y > 3 && y < 15{
                     self.set_tile(0, x, y, Tile::Static(1, Vec::new()))
                 }
                 else {
@@ -154,14 +154,20 @@ impl<'a> TiledMap<'a> {
             let tile_id = rng.random_range(0..2);
             let status = rng.random_range(0..3);
 
-            let tile = match (tile_id, status) {
-                (0, 0) => Tile::Static(2, vec![Tags::Barrier]),
-                (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Barrier]),
-                (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, vec![Tags::Barrier]),
+            //let tile = match (tile_id, status) {
+            //    (0, 0) => Tile::Static(2, vec![Tags::Barrier, Tags::Destroyable]),
+            //    (0, 1) => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Barrier]),
+            //    (0, 2) => Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, vec![Tags::Barrier]),
+            //
+            //    (1, 0) => Tile::Static(7, vec![Tags::Barrier, Tags::Destroyable]),
+            //    (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+            //    (1, 2) => Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]),
+            //    _ => Tile::Static(0, Vec::new()),
+            //};
 
-                (1, 0) => Tile::Static(7, vec![Tags::Barrier]),
-                (1, 1) => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
-                (1, 2) => Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]),
+            let tile = match tile_id {
+                0 => Tile::Static(2, vec![Tags::Barrier, Tags::Destroyable]),
+                1 => Tile::Static(7, vec![Tags::Barrier, Tags::Destroyable]),
                 _ => Tile::Static(0, Vec::new()),
             };
 
@@ -208,15 +214,15 @@ impl<'a> TiledMap<'a> {
 
     pub fn update_animated_tiles(&mut self, delta_time: f32) {
         self.animation_counter += delta_time;
-        if self.animation_counter < 1.0 {
+        if self.animation_counter < 0.3 {
             return;
         }
 
         self.animation_counter = 0.0;
 
-        for l in &mut self.map {
-            for row in &mut l.tiles {
-                for tile in row.iter_mut() {
+        for (z, l) in &mut self.map.iter_mut().enumerate() {
+            for (x, row) in l.tiles.iter_mut().enumerate() {
+                for (y, tile) in row.iter_mut().enumerate() {
                     match tile {
                         Tile::Static(_, _) => (),
                         Tile::Animated(items, current, _)
@@ -231,11 +237,14 @@ impl<'a> TiledMap<'a> {
                         {
                             *current += 1
                         }
-                        Tile::AnimatedOnce(_, _, _) => (),
+                        Tile::AnimatedOnce(_, _, tags) => { 
+                            tags.retain(|tag| *tag != Tags::Barrier);
+                        },
                     };
                 }
             }
         }
+        
     }
 
     pub fn render(&self, d: &mut RaylibMode2D<'_, RaylibDrawHandle>) {
@@ -255,7 +264,7 @@ impl<'a> TiledMap<'a> {
     }
 
     pub fn get_collision_tiles_with_layer(
-        &mut self,
+        &self,
         layer: i32,
         other: &Rectangle,
     ) -> Option<Vec<(&Tile, Vector2)>> {
