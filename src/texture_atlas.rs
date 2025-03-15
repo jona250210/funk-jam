@@ -13,10 +13,13 @@ impl TextureAtlas {
         }        
     }
 
-    pub fn get_texture(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread, path: &str) -> &Texture2D {
+    pub fn store_texture(&mut self, path: &str, texture: Texture2D) {
+        self.textures.insert(path.to_string(), texture);
+    }
+
+    pub fn get_texture(&self, path: &str) -> &Texture2D {
         if !self.textures.contains_key(path) {
-            let texture: Texture2D = rl.load_texture(&thread, path).expect("Failed to load texture");
-            self.textures.insert(path.to_string(), texture);
+            println!("Texture {} not loaded yet", path)
         }
         return self.textures.get(path).unwrap();
     }

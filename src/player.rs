@@ -2,22 +2,22 @@ use nonempty::NonEmpty;
 use raylib::prelude::*;
 
 pub struct Animation<'a> {
-    frames: &'a NonEmpty<Texture2D>,
+    frames: &'a Vec<&'a Texture2D>,
     pub current: &'a Texture2D,
     index: usize,
 }
 
 impl Animation<'_> {
-    pub fn new<'a>(frames: &'a NonEmpty<Texture2D>) -> Animation<'a> {
+    pub fn new<'a>(frames: &'a Vec<&Texture2D>) -> Animation<'a> {
         Animation {
             frames,
-            current: &frames.head,
+            current: &frames[0],
             index: 0,
         }
     }
 
     pub fn update(&mut self) {
-        self.current = self.frames.get(self.index).unwrap_or(self.frames.first());
+        self.current = self.frames.get(self.index).unwrap_or(&self.frames[0]);
 
         self.index += 1;
         if self.index >= self.frames.len() {
@@ -33,7 +33,7 @@ pub struct Player<'a> {
 }
 
 impl Player<'_> {
-    pub fn new<'a>(pos: Vector2, frames: &'a NonEmpty<Texture2D>) -> Player<'a> {
+    pub fn new<'a>(pos: Vector2, frames: &'a Vec<&Texture2D>) -> Player<'a> {
         Player {
             pos,
             movement: Movement {

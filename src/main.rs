@@ -15,39 +15,47 @@ use texture_atlas::TextureAtlas;
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
-    let mut atlas = TextureAtlas::new();
-    let frames = nonempty![
-        rl.load_texture(&thread, "assets/run0.png").unwrap(),
-        rl.load_texture(&thread, "assets/run1.png").unwrap(),
-        rl.load_texture(&thread, "assets/run2.png").unwrap(),
-        rl.load_texture(&thread, "assets/run3.png").unwrap(),
-        rl.load_texture(&thread, "assets/run4.png").unwrap(),
-        rl.load_texture(&thread, "assets/run5.png").unwrap(),
-        rl.load_texture(&thread, "assets/run6.png").unwrap(),
-        //atlas.get_texture(&mut rl, &thread, "assets/run0.png"),
-        //atlas.get_texture(&mut rl, &thread, "assets/run1.png"),
-    ];
 
+    // Hier alle Texturen einfügen, die automatisch geladen werden sollen
+    // Sie können dann später mit atlas.get_texture("pfad/zu/texture") abgerufen werden
+    let textures = [
+        "assets/run0.png",
+        "assets/run1.png",
+        "assets/run2.png",
+        "assets/run3.png",
+        "assets/run4.png",
+        "assets/run5.png",
+        "assets/run6.png",
+        "Hammer.png"
+    ];
+    let mut atlas = TextureAtlas::new();
+    for path in textures.iter() {
+        let texture = rl.load_texture(&thread, path).unwrap();
+        atlas.store_texture(path, texture);
+    }
+
+    // PLAYER
+    let frames = vec![
+        atlas.get_texture("assets/run0.png"),
+        atlas.get_texture("assets/run1.png"),
+        atlas.get_texture("assets/run2.png"),
+        atlas.get_texture("assets/run3.png"),
+        atlas.get_texture("assets/run4.png"),
+        atlas.get_texture("assets/run5.png"),
+        atlas.get_texture("assets/run6.png"),
+    ];
     let mut player = Player::new(Vector2::new(200.0, 200.0), &frames);
 
-    println!(
-        "({}, {})",
-        player.animation.current.width, player.animation.current.height
-    );
+    // DEMO
+    let texture1 = atlas.get_texture("Hammer.png");
+    let texture2 = atlas.get_texture("Hammer.png");
+    let texture3 = atlas.get_texture("Hammer.png");
 
-    let mut atlas = TextureAtlas::new();
-    let mut textures: Vec<&Texture2D> = Vec::new();
-    let texture = atlas.get_texture(&mut rl, &thread, "Hammer.png");
-    textures.push(texture);
-
-    let l = rl.load_texture(&thread, "Hammer.png").unwrap();
-
+    // AUDIO MANAGER
     let mut audio_device = RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
     audio_manager.load_sound( "test", "sword_sound.wav");
     audio_manager.play_sound( "test");
-
-    println!("({}, {})", l.width, l.height);
 
     while !rl.window_should_close() {
         rl.set_target_fps(120);
@@ -83,10 +91,9 @@ fn main() {
         );
 
         d.clear_background(Color::WHITE);
-        d.draw_text("Hello, world!", 12, 12, 20, Color::BLACK);
-        d.draw_texture(textures[0], 100, 100, Color::WHITE);
-        d.draw_texture(&l, 200, 200, Color::WHITE);
-
-
+        d.draw_text("Hello, world!", 42, 42, 20, Color::BLACK);
+        d.draw_texture(texture1, 100, 100, Color::WHITE);
+        d.draw_texture(texture2, 150, 150, Color::WHITE);
+        d.draw_texture(texture3, 150, 150, Color::WHITE);
     }
 }
