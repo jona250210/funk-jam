@@ -1,6 +1,9 @@
 use rand::Rng;
 use raylib::prelude::*;
+use ron::de::SpannedError;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::{fs::File, io::Read, path::Path};
 
 use crate::texture_atlas::TextureAtlas;
 use crate::trait_collision::Collision;
@@ -109,6 +112,7 @@ impl<'a> TiledMap<'a> {
                 /*14*/ "assets/water1.png",
                 /*15*/ "assets/water2.png",
                 /*16*/ "assets/water3.png",
+                /*17*/ "assets/Sandmauer.png",
             ],
             animation_counter: 0.0,
         };
@@ -117,6 +121,59 @@ impl<'a> TiledMap<'a> {
         tiled_map.randomize_tiles();
 
         tiled_map
+    }
+
+    pub fn from(config: MazeConfig, atlas: &'a TextureAtlas) -> Result<Self, String> {
+        let mut tiled_map = TiledMap::new(2, config.size.0, config.size.1, atlas);
+
+        let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ');
+        let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ');
+
+        // ground
+        for y in 0..tiled_map.size_y {
+            for x in 0..tiled_map.size_x {
+                tiled_map.set_tile(
+                    0,
+                    x,
+                    y,
+                    match ground_iter.next() {
+                        Some('0') => Tile::Static(0, Vec::new()),
+                        Some('1') => Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]),
+                        Some('2') => Tile::Static(1, Vec::new()),
+                        Some('3') => Tile::Static(17, vec![Tags::Barrier]),
+                        Some('4') => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Destroyable]),
+                        Some('5') => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+
+                        Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
+                        None => return Err("MazeConfig ground is too short somehow".to_string()),
+                    },
+                )
+            }
+        }
+
+        // objects
+        for y in 0..tiled_map.size_y {
+            for x in 0..tiled_map.size_x {
+                tiled_map.set_tile(
+                    1,
+                    x,
+                    y,
+                    match objects_iter.next() {
+                        Some('0') => Tile::Static(0, Vec::new()),
+                        Some('1') => Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]),
+                        Some('2') => Tile::Static(1, Vec::new()),
+                        Some('3') => Tile::Static(17, vec![Tags::Barrier]),
+                        Some('4') => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Destroyable]),
+                        Some('5') => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+
+                        Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
+                        None => return Err("MazeConfig object is too short somehow".to_string()),
+                    },
+                )
+            }
+        }
+
+        return Ok(tiled_map);
     }
 
     fn load_textures(&mut self, atlas: &'a TextureAtlas) {
@@ -137,9 +194,13 @@ impl<'a> TiledMap<'a> {
             for y in 0..self.size_y {
                 if x > 3 && x < 15 && y > 3 && y < 15{
                     self.set_tile(0, x, y, Tile::Static(1, Vec::new()))
-                }
-                else {
-                    self.set_tile(0, x, y, Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]));
+                } else {
+                    self.set_tile(
+                        0,
+                        x,
+                        y,
+                        Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]),
+                    );
                 }
             }
         }
@@ -197,7 +258,7 @@ impl<'a> TiledMap<'a> {
                 Tile::Animated(items, current, _) => items[*current] as i32,
                 Tile::AnimatedOnce(items, current, _) => items[*current] as i32,
             })
-            .map(|v| &**v)
+            .map(|v| *v)
     }
 
     pub fn get_tile_id(&self, layer: i32, x: i32, y: i32) -> Option<i32> {
@@ -275,5 +336,40 @@ impl<'a> TiledMap<'a> {
 impl Collision for TiledMapLayer {
     fn collision_with_rec(&self, other: &Rectangle) -> bool {
         todo!()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MazeConfig {
+    pub size: (i32, i32),
+    pub ground: String,
+    pub objects: String,
+}
+
+impl MazeConfig {
+    pub fn new(path: &str) -> Result<MazeConfig, String> {
+        // Create a path to the desired file
+        let path = Path::new(path);
+        let display = path.display();
+
+        // Open the path in read-only mode, returns `io::Result<File>`
+        let mut file = match File::open(&path) {
+            Err(why) => return Err(format!("couldn't open {}: {}", display, why)),
+            Ok(file) => file,
+        };
+
+        // Read the file contents into a string, returns `io::Result<usize>`
+        let mut s = String::new();
+        match file.read_to_string(&mut s) {
+            Err(why) => return Err(format!("couldn't read {}: {}", display, why)),
+            Ok(_) => (),
+        }
+
+        let test: Result<MazeConfig, SpannedError> = ron::from_str(s.as_str());
+
+        match test {
+            Ok(config) => Ok(config),
+            Err(why) => Err(why.to_string()),
+        }
     }
 }

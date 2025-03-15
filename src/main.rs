@@ -16,7 +16,7 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::{Tags, Tile, TiledMap, SCALE, TILE_HEIGHT, TILE_WIDTH};
+use tiled_map::{MazeConfig, SCALE, TILE_HEIGHT, TILE_WIDTH, Tags, TiledMap};
 
 mod item;
 use item::Item;
@@ -24,6 +24,10 @@ use item::Item;
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
+    let test: MazeConfig = match MazeConfig::new("assets/maze1.KB") {
+        Ok(config) => config,
+        Err(why) => panic!("{}", why),
+    };
     // Hier alle Texturen einfügen, die automatisch geladen werden sollen
     // Sie können dann später mit atlas.get_texture("pfad/zu/texture") abgerufen werden
     let textures = [
@@ -57,6 +61,7 @@ fn main() {
         "assets/water1.png",
         "assets/water2.png",
         "assets/water3.png",
+        "assets/Sandmauer.png",
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -107,7 +112,11 @@ fn main() {
     let mut frame_times = 0 as f32;
 
     // TILED MAP
-    let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
+    // let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
+    let mut tiled_map = match TiledMap::from(test, &atlas) {
+        Ok(map) => map,
+        Err(why) => panic!("Error: {}", why),
+    };
 
     // ITEMS
     let mut items = vec![
@@ -170,7 +179,6 @@ fn main() {
             d.draw_fps(12, 12);
 
             player.draw(&mut d);
-
         }
 
         if frame_times > 0.08 {
