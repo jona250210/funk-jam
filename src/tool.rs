@@ -43,31 +43,23 @@ impl<'a> Tool<'a> {
                 if *animation_running {
                     animation.update();
                 }
+                if animation.index == 0 {
+                    *animation_running = false;
+                }
             }
             Tool::Pickaxe(_, animation, _, animation_running) => {
                 if *animation_running {
                     animation.update();
                 }
+                if animation.index == 0 {
+                    *animation_running = false;
+                }
             }
             Tool::Shovel(_, animation, _, animation_running) => {
                 if *animation_running {
                     animation.update();
                 }
-            }
-        };
-        match self {
-            Tool::Axe(_, animation, _, animation_running) => {
-                if *animation_running && animation.index == 1 {
-                    *animation_running = false;
-                }
-            }
-            Tool::Pickaxe(_, animation, _, animation_running) => {
-                if *animation_running && animation.index == 1 {
-                    *animation_running = false;
-                }
-            }
-            Tool::Shovel(_, animation, _, animation_running) => {
-                if *animation_running && animation.index == 1 {
+                if animation.index == 0 {
                     *animation_running = false;
                 }
             }
@@ -107,7 +99,7 @@ impl<'a> Tool<'a> {
             ),
             Rectangle::new(
                 player_pos.x + (tmp.0 * tmp.1.width()) as f32,
-                player_pos.y + ((elapsed_time*7.0).sin() * 4.0),
+                player_pos.y + ((elapsed_time*4.0).sin() * 4.0) + 7.0,
                 (tmp.1.width() as f32 * SCALE) as f32,
                 (tmp.1.height() as f32 * SCALE) as f32,
             ),

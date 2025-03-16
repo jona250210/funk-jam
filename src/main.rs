@@ -122,12 +122,12 @@ fn main() {
         atlas.get_texture("assets/shovel2.png"),
         atlas.get_texture("assets/shovel3.png"),
     ];
-    //let tool_left = Tool::Axe(player::Orientation::Left, Animation::new(&axe_frames), 3, false);
+    let tool_left = Tool::Axe(player::Orientation::Left, Animation::new(&axe_frames), 3, false);
     //let tool_right = Tool::Axe(player::Orientation::Right, Animation::new(&axe_frames), 3, false);
     //let tool_left = Tool::Pickaxe(player::Orientation::Left, Animation::new(&pickaxe_frames), 3, false);
-    //let tool_right = Tool::Pickaxe(player::Orientation::Right, Animation::new(&pickaxe_frames), 3, false);
-    let tool_left = Tool::Shovel(player::Orientation::Left, Animation::new(&shovel_frames), 3, false);
-    let tool_right = Tool::Shovel(player::Orientation::Right, Animation::new(&shovel_frames), 3, false);
+    let tool_right = Tool::Pickaxe(player::Orientation::Right, Animation::new(&pickaxe_frames), 3, false);
+    //let tool_left = Tool::Shovel(player::Orientation::Left, Animation::new(&shovel_frames), 3, false);
+    //let tool_right = Tool::Shovel(player::Orientation::Right, Animation::new(&shovel_frames), 3, false);
 
     let mut player = Player::new(
         Vector2::new(

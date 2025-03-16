@@ -81,16 +81,16 @@ impl Player<'_> {
     pub fn get_tool_collision_rect(&self) -> Rectangle {
         return match self.orientation {
             Orientation::Left => Rectangle::new(
-                self.pos.x - 25.0,
-                self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE,
-                self.dimensions.y * SCALE * 0.5,
+                self.pos.x - 50.0,
+                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
+                self.dimensions.x * SCALE * 2.0,
+                self.dimensions.y * SCALE,
             ),
             Orientation::Right => Rectangle::new(
                 self.pos.x + 25.0,
-                self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE,
-                self.dimensions.y * SCALE * 0.5,
+                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
+                self.dimensions.x * SCALE * 2.0,
+                self.dimensions.y * SCALE,
             ),
         };
     }
