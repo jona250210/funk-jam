@@ -239,6 +239,45 @@ impl<'a> Player<'a> {
             }
         }
 
+        self.inventory = match &self.inventory {
+            Inventory::Empty => Inventory::Empty,
+            Inventory::Left(l) => match l {
+                Tool::Axe(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                Tool::Pickaxe(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                Tool::Shovel(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                _ => Inventory::Left(l.clone()),
+            },
+            Inventory::Right(r) => match r {
+                Tool::Axe(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                Tool::Pickaxe(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                Tool::Shovel(orientation, animation, u, b) if *u == 0 && !b => Inventory::Empty,
+                _ => Inventory::Right(r.clone()),
+            },
+            Inventory::Both(l, r) => match l {
+                Tool::Axe(orientation, animation, u, b) if *u == 0 && !b => {
+                    Inventory::Right(r.clone())
+                }
+                Tool::Pickaxe(orientation, animation, u, b) if *u == 0 && !b => {
+                    Inventory::Right(r.clone())
+                }
+                Tool::Shovel(orientation, animation, u, b) if *u == 0 && !b => {
+                    Inventory::Right(r.clone())
+                }
+                _ => match r {
+                    Tool::Axe(orientation, animation, u, b) if *u == 0 && !b => {
+                        Inventory::Left(l.clone())
+                    }
+                    Tool::Pickaxe(orientation, animation, u, b) if *u == 0 && !b => {
+                        Inventory::Left(l.clone())
+                    }
+                    Tool::Shovel(orientation, animation, u, b) if *u == 0 && !b => {
+                        Inventory::Left(l.clone())
+                    }
+                    _ => Inventory::Both(l.clone(), r.clone()),
+                },
+            },
+        };
+      
         if self.pos != old_old_pos {
             if self.hp.is_positive() {
                 self.hp -= 1;
@@ -249,26 +288,58 @@ impl<'a> Player<'a> {
     }
 
     pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
+        let mut used_tool;
         match (&self.orientation, &mut self.inventory) {
-            (Orientation::Left, Inventory::Left(l)) => l.use_tool(),
-            (Orientation::Right, Inventory::Right(r)) => r.use_tool(),
-            (Orientation::Right, Inventory::Both(_, r)) => r.use_tool(),
-            (Orientation::Left, Inventory::Both(l, _)) => l.use_tool(),
+            (Orientation::Left, Inventory::Left(l)) => {
+                l.use_tool();
+            }
+            (Orientation::Right, Inventory::Right(r)) => {
+                r.use_tool();
+            }
+            (Orientation::Right, Inventory::Both(_, r)) => {
+                r.use_tool();
+            }
+            (Orientation::Left, Inventory::Both(l, _)) => {
+                l.use_tool();
+            }
             _ => (),
+        }
+
+        let coll_rec = self.get_tool_collision_rect();
+        match (&self.orientation, &mut self.inventory) {
+            (Orientation::Left, Inventory::Left(l)) => used_tool = Some(l),
+            (Orientation::Right, Inventory::Right(r)) => used_tool = Some(r),
+            (Orientation::Right, Inventory::Both(_, r)) => used_tool = Some(r),
+            (Orientation::Left, Inventory::Both(l, _)) => used_tool = Some(l),
+            _ => used_tool = None,
         }
 
         let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
         for layer in 0..tiled_map.layers {
             tiled_map
-                .get_collision_tiles_with_layer(layer, &self.get_tool_collision_rect())
+                .get_collision_tiles_with_layer(layer, &coll_rec)
                 .map(|mut tmp| tool_collision_tiles.append(&mut tmp));
         }
 
         let mut marked_tiles: Vec<(Tile, Vector2)> = vec![];
         for (tile, pos) in tool_collision_tiles {
             match tile {
-                Tile::Static(_, tags) if tags.contains(&Tags::Destroyable) => {
-                    marked_tiles.push((tile.clone(), pos));
+                Tile::Static(id, tags) if tags.contains(&Tags::Destroyable) => {
+                    match &mut used_tool {
+                        Some(Tool::Axe(orientation, animation, u, _)) if id == &2 => {
+                            marked_tiles.push((tile.clone(), pos));
+                            *u = 0;
+                        }
+                        Some(Tool::Pickaxe(orientation, animation, u, _)) if id == &7 => {
+                            marked_tiles.push((tile.clone(), pos));
+                            *u = 0;
+                        }
+                        Some(Tool::Shovel(orientation, animation, u, _)) if id == &18 => {
+                            marked_tiles.push((tile.clone(), pos));
+                            *u = 0;
+                        }
+                        _ => (),
+                    };
                 }
                 // We will only interact with Static Tiles?
                 _ => (),
@@ -373,13 +444,13 @@ impl<'a> Player<'a> {
     ) -> bool {
         let tool = match item.item_type {
             crate::item::ItemType::Axe => {
-                Tool::Axe(Orientation::Left, Animation::new(&axe_frames), 3, false)
+                Tool::Axe(Orientation::Left, Animation::new(&axe_frames), 1, false)
             }
 
             crate::item::ItemType::Pickaxe => Tool::Pickaxe(
                 Orientation::Right,
                 Animation::new(&pickaxe_frames),
-                3,
+                1,
                 false,
             ),
             crate::item::ItemType::Gear => {
@@ -387,7 +458,7 @@ impl<'a> Player<'a> {
                 return true;
             }
             crate::item::ItemType::Shovel => {
-                Tool::Shovel(Orientation::Right, Animation::new(&shovel_frames), 3, false)
+                Tool::Shovel(Orientation::Right, Animation::new(&shovel_frames), 1, false)
             }
         };
 
@@ -450,6 +521,43 @@ impl<'a> Player<'a> {
     pub fn right(&mut self) {
         self.movement.right();
         self.orientation = Orientation::Right;
+    }
+
+    pub fn switch_tools(&mut self) {
+        self.inventory = match &self.inventory {
+            Inventory::Empty => Inventory::Empty,
+            Inventory::Left(l) => Inventory::Right(l.clone()),
+            Inventory::Right(r) => Inventory::Left(r.clone()),
+            Inventory::Both(l, r) => Inventory::Both(r.clone(), l.clone()),
+        };
+
+        match &mut self.inventory {
+            Inventory::Left(l) => match l {
+                Tool::Axe(or, _, _, _) => *or = Orientation::Left,
+                Tool::Pickaxe(or, _, _, _) => *or = Orientation::Left,
+                Tool::Shovel(or, _, _, _) => *or = Orientation::Left,
+            },
+            Inventory::Right(l) => match l {
+                Tool::Axe(or, _, _, _) => *or = Orientation::Right,
+                Tool::Pickaxe(or, _, _, _) => *or = Orientation::Right,
+                Tool::Shovel(or, _, _, _) => *or = Orientation::Right,
+            },
+            Inventory::Both(l, r) => {
+                match l {
+                    Tool::Axe(or, _, _, _) => *or = Orientation::Left,
+                    Tool::Pickaxe(or, _, _, _) => *or = Orientation::Left,
+                    Tool::Shovel(or, _, _, _) => *or = Orientation::Left,
+                }
+
+                match r {
+                    Tool::Axe(or, _, _, _) => *or = Orientation::Right,
+                    Tool::Pickaxe(or, _, _, _) => *or = Orientation::Right,
+                    Tool::Shovel(or, _, _, _) => *or = Orientation::Right,
+                }
+            }
+
+            _ => (),
+        };
     }
 }
 
