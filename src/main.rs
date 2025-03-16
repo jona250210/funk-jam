@@ -262,6 +262,9 @@ fn main() {
             let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
             tiled_map.handle_hit_tiles(marked_tiles);
         }
+        if rl.is_key_pressed(KeyboardKey::KEY_F) {
+            player.switch_tools();
+        }
 
         player.update(delta_time, &tiled_map);
 
