@@ -5,6 +5,7 @@ use crate::player::{self, Animation, Orientation};
 type UsesLeft = i32;
 type AnimationRunning = bool;
 
+#[derive(Clone)]
 pub enum Tool<'a> {
     Axe(Orientation, Animation<'a>, UsesLeft, AnimationRunning),
     Pickaxe(Orientation, Animation<'a>, UsesLeft, AnimationRunning),
