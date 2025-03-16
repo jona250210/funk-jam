@@ -72,7 +72,7 @@ impl<'a> Player<'a> {
             run: Animation::new(run),
             orientation: Orientation::Right,
             inventory: Inventory::Empty,
-            hp: 100,
+            hp: 1000,
         }
     }
 
@@ -104,6 +104,7 @@ impl<'a> Player<'a> {
 
     pub fn update(&mut self, frame_time: f32, tiled_map: &TiledMap) {
         let old_pos = self.pos.clone();
+        let old_old_pos = self.pos.clone();
 
         self.pos.x = old_pos.x;
         self.pos.y = old_pos.y;
@@ -235,6 +236,14 @@ impl<'a> Player<'a> {
                     self.pos.y = old_pos.y;
                 }
                 _ => (),
+            }
+        }
+
+        if self.pos != old_old_pos {
+            if self.hp.is_positive() {
+                self.hp -= 1;
+            } else {
+                panic!("TOD");
             }
         }
     }
@@ -374,7 +383,7 @@ impl<'a> Player<'a> {
                 false,
             ),
             crate::item::ItemType::Gear => {
-                self.hp = 100;
+                self.hp = 1000;
                 return true;
             }
             crate::item::ItemType::Shovel => {

@@ -283,6 +283,7 @@ fn main() {
             }
 
             d.draw_fps(12, 12);
+            d.draw_text(format!("HP: {}", player.hp).as_str(), (player.pos.x - 100.0) as i32, (player.pos.y + 50.0) as i32, 30, Color::RED);
             d.clear_background(Color::WHITE);
             d.draw_fps(12, 12);
 
