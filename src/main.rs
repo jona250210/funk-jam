@@ -113,8 +113,8 @@ fn main() {
     let mut audio_device =
         RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
     let mut audio_manager = AudioManager::new(&mut audio_device);
-    audio_manager.load_sound("test", "sword_sound.wav");
-    audio_manager.play_sound("test");
+    audio_manager.load_sound("test2", "assets/sounds/stone.ogg");
+    audio_manager.play_sound("test2");
 
     let mut frame_times = 0 as f32;
 
