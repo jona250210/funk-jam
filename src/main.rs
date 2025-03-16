@@ -49,7 +49,6 @@ fn main() {
     audio_manager.load_sound("step_sand_2", "assets/sounds/sand_step_2.wav");
     audio_manager.load_sound("ui", "assets/sounds/menu.wav");
 
-
     let test: MazeConfig = match MazeConfig::new("assets/maze2.KB") {
         Ok(config) => config,
         Err(why) => panic!("{}", why),
@@ -64,7 +63,6 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
-
         "assets/idle0.png",
         "assets/idle1.png",
         "assets/idle2.png",
@@ -88,7 +86,6 @@ fn main() {
         "assets/idle1_20.png",
         "assets/idle2_20.png",
         "assets/idle3_20.png",
-
         "assets/palme0.png",
         "assets/palme1.png",
         "assets/palme2.png",
@@ -232,7 +229,6 @@ fn main() {
         },
     );
 
-    
     let mut frame_times = 0 as f32;
 
     // TILED MAP
@@ -306,7 +302,7 @@ fn main() {
 
     // INTRO, WIEDER EINKOMMENTIEREN!
     if !intro.play(&mut rl, &thread, &mut audio_manager) {
-       return;  // Exit if window was closed during intro
+        return; // Exit if window was closed during intro
     }
 
     let mut elapsed_time = 0.0;
@@ -340,7 +336,7 @@ fn main() {
             player.left();
             walking = true;
         }
-        if walking && walk_sound_counter > 0.25{
+        if walking && walk_sound_counter > 0.25 {
             walk_sound_counter = 0.0;
             walk_sound_switch = !walk_sound_switch;
             match walk_sound_switch {
@@ -349,9 +345,10 @@ fn main() {
             }
         }
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map, &mut audio_manager);
+            let marked_tiles: Vec<(Tile, Vector2)> =
+                player.use_tool(&tiled_map, &mut audio_manager);
             tiled_map.handle_hit_tiles(marked_tiles);
-        } 
+        }
         if rl.is_key_pressed(KeyboardKey::KEY_F) {
             player.switch_tools();
         }
@@ -403,12 +400,17 @@ fn main() {
             }
 
             d.draw_fps(12, 12);
-            d.draw_text(format!("HP: {}", player.hp).as_str(), (player.pos.x - 100.0) as i32, (player.pos.y + 50.0) as i32, 30, Color::RED);
+            d.draw_text(
+                format!("HP: {}", player.hp).as_str(),
+                (player.pos.x - 100.0) as i32,
+                (player.pos.y + 50.0) as i32,
+                30,
+                Color::RED,
+            );
             d.clear_background(Color::WHITE);
             d.draw_fps(12, 12);
 
             player.draw(&mut d, delta_time, elapsed_time);
-            
         }
 
         if frame_times > 0.12 {
@@ -419,15 +421,33 @@ fn main() {
         }
     }
 
-    // Endscreen
-    let outro = match IntroSequence::new("assets/outro") {
-        Ok(outro) => outro,
-        Err(err) => {
-            println!("Failed to load outro sequence: {}", err);
-            IntroSequence { files_content: Vec::new() }
+    if player.hp > 0 {
+        // Endscreen
+        let outro = match IntroSequence::new("assets/outro") {
+            Ok(outro) => outro,
+            Err(err) => {
+                println!("Failed to load outro sequence: {}", err);
+                IntroSequence {
+                    files_content: Vec::new(),
+                }
+            }
+        };
+        if !outro.play(&mut rl, &thread, &mut audio_manager) {
+            return; // Exit if window was closed during outro
         }
-    };
-    if !outro.play(&mut rl, &thread) {
-       return;  // Exit if window was closed during outro
+    } else {
+        // Endscreen
+        let outro = match IntroSequence::new("assets/outro_bad") {
+            Ok(outro) => outro,
+            Err(err) => {
+                println!("Failed to load outro sequence: {}", err);
+                IntroSequence {
+                    files_content: Vec::new(),
+                }
+            }
+        };
+        if !outro.play(&mut rl, &thread, &mut audio_manager) {
+            return; // Exit if window was closed during outro
+        }
     }
 }
