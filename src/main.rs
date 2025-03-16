@@ -166,19 +166,6 @@ fn main() {
     let mut background_tiled_map = TiledMap::water(1, 50, 50, &atlas);
 
     // ITEMS
-    let mut items = vec![
-        Item::new(
-            Vector2::new(100.0, 100.0),
-            atlas.get_texture("assets/potion.png"),
-            1.25,
-        ),
-        Item::new(
-            Vector2::new(200.0, 200.0),
-            atlas.get_texture("assets/potion.png"),
-            1.25,
-        ),
-    ];
-  
     let mut items: Vec<Item> = Vec::new();
 
     for pickaxe in test.pickaxes {
