@@ -89,6 +89,7 @@ fn main() {
         "assets/pile3.png",
         "assets/pile4.png",
         "assets/pile5.png",
+        "assets/pfutze.png",
     ];
 
     let mut atlas = TextureAtlas::new();
@@ -231,9 +232,9 @@ fn main() {
     };
     
     // INTRO, WIEDER EINKOMMENTIEREN!
-    //if !intro.play(&mut rl, &thread) {
-    //    return;  // Exit if window was closed during intro
-    //}
+    if !intro.play(&mut rl, &thread) {
+       return;  // Exit if window was closed during intro
+    }
 
     let mut elapsed_time = 0.0;
 
@@ -266,7 +267,11 @@ fn main() {
             player.switch_tools();
         }
 
-        player.update(delta_time, &tiled_map);
+        let finish = player.update(delta_time, &tiled_map);
+
+        if finish {
+            break;
+        }
 
         // Item collisions
         let player_dings = player.get_collision_rect();
@@ -322,4 +327,17 @@ fn main() {
             frame_times += rl.get_frame_time()
         }
     }
+
+    // Endscreen
+    let outro = match IntroSequence::new("assets/outro") {
+        Ok(outro) => outro,
+        Err(err) => {
+            println!("Failed to load outro sequence: {}", err);
+            IntroSequence { files_content: Vec::new() }
+        }
+    };
+    if !outro.play(&mut rl, &thread) {
+       return;  // Exit if window was closed during outro
+    }
+
 }

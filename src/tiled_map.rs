@@ -33,6 +33,7 @@ type TextureID = i32;
 pub enum Tags {
     Barrier,
     Destroyable,
+    Goal,
 }
 
 #[derive(Clone)]
@@ -52,6 +53,10 @@ pub fn new_palme() -> Tile {
 
 pub fn new_pile() -> Tile {
     Tile::Static(18, vec![Tags::Barrier, Tags::Destroyable])
+}
+
+pub fn new_pfutze() -> Tile {
+    Tile::Static(25, vec![Tags::Goal])
 }
 
 #[derive(Clone)]
@@ -145,6 +150,7 @@ impl<'a> TiledMap<'a> {
                 /*22*/ "assets/pile4.png",
                 /*23*/ "assets/pile5.png",
                 /*24*/ "assets/empty_tile.png",
+                /*25*/ "assets/pfutze.png",
             ],
             animation_counter: 0.0,
         };
@@ -200,6 +206,7 @@ impl<'a> TiledMap<'a> {
                         Some('4') => new_palme(),
                         Some('5') => new_stone(),
                         Some('6') => new_pile(),
+                        Some('7') => new_pfutze(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig ground is too short somehow".to_string()),
@@ -223,6 +230,7 @@ impl<'a> TiledMap<'a> {
                         Some('4') => new_palme(),
                         Some('5') => new_stone(),
                         Some('6') => new_pile(),
+                        Some('7') => new_pfutze(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig object is too short somehow".to_string()),

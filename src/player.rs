@@ -102,7 +102,7 @@ impl<'a> Player<'a> {
         };
     }
 
-    pub fn update(&mut self, frame_time: f32, tiled_map: &TiledMap) {
+    pub fn update(&mut self, frame_time: f32, tiled_map: &TiledMap) -> bool {
         let old_pos = self.pos.clone();
         let old_old_pos = self.pos.clone();
 
@@ -125,6 +125,9 @@ impl<'a> Player<'a> {
         }
         for (tile, _pos) in collision_tiles {
             match tile {
+                tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Goal) => {
+                    return true;
+                }
                 tiled_map::Tile::Static(_, tags) if tags.contains(&Tags::Barrier) => {
                     self.pos.x = old_pos.x;
                     self.pos.y = old_pos.y;
@@ -285,6 +288,8 @@ impl<'a> Player<'a> {
                 panic!("TOD");
             }
         }
+
+        return false;
     }
 
     pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
