@@ -138,6 +138,11 @@ fn main() {
             atlas.get_texture("assets/potion.png"),
             1.25,
         ),
+        Item::new(
+            Vector2::new(150.0, 150.0),
+            atlas.get_texture("assets/potion.png"),
+            1.25,
+        ),
     ];
 
     rl.set_target_fps(120);
@@ -170,13 +175,15 @@ fn main() {
         // Item collisions
         let player_dings = player.get_collision_rect();
 
-        let collided_items;
-            collided_items = items.iter().filter(|i| i.collision_with_rec(&player_dings));
-        let mut to_remove: Vec<&Item> = Vec::new();
+        let collided_indices: Vec<usize> = items.iter()
+            .enumerate()
+            .filter(|(_, i)| i.collision_with_rec(&player_dings))
+            .map(|(index, _)| index)
+            .collect();
 
-        for item in collided_items {
-            if player.add_tool(item) {
-                items.retain(|i| &i != &item);
+        for &index in collided_indices.iter() {
+            if player.add_tool(&items[index]) {
+                items.remove(index);
             }
         }
 
