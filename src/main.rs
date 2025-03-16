@@ -1,7 +1,7 @@
 mod trait_collision;
 
 mod player;
-use std::vec;
+use std::{ops::Deref, vec};
 
 use player::{Animation, Player};
 
@@ -16,10 +16,11 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::{MazeConfig, Tags, Tile, TiledMap, SCALE, TILE_HEIGHT, TILE_WIDTH};
+use tiled_map::{MazeConfig, SCALE, TILE_HEIGHT, TILE_WIDTH, Tags, Tile, TiledMap};
 
 mod item;
 use item::Item;
+use trait_collision::Collision;
 
 mod tool;
 use tool::Tool;
@@ -78,7 +79,9 @@ fn main() {
         "assets/shovel1.png",
         "assets/shovel2.png",
         "assets/shovel3.png",
+        "assets/gear.png",
     ];
+
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
         let texture = rl.load_texture(&thread, path).unwrap();
@@ -122,12 +125,6 @@ fn main() {
         atlas.get_texture("assets/shovel2.png"),
         atlas.get_texture("assets/shovel3.png"),
     ];
-    let tool_left = Tool::Axe(player::Orientation::Left, Animation::new(&axe_frames), 3, false);
-    //let tool_right = Tool::Axe(player::Orientation::Right, Animation::new(&axe_frames), 3, false);
-    //let tool_left = Tool::Pickaxe(player::Orientation::Left, Animation::new(&pickaxe_frames), 3, false);
-    let tool_right = Tool::Pickaxe(player::Orientation::Right, Animation::new(&pickaxe_frames), 3, false);
-    //let tool_left = Tool::Shovel(player::Orientation::Left, Animation::new(&shovel_frames), 3, false);
-    //let tool_right = Tool::Shovel(player::Orientation::Right, Animation::new(&shovel_frames), 3, false);
 
     let mut player = Player::new(
         Vector2::new(
@@ -136,8 +133,6 @@ fn main() {
         ),
         &idle_frames,
         &run_frames,
-        tool_left,
-        tool_right,
     );
 
     // CAMERA
@@ -149,7 +144,6 @@ fn main() {
             y: player.pos.y + 20.0,
         },
     );
-    
 
     // AUDIO MANAGER
     let mut audio_device =
@@ -162,25 +156,62 @@ fn main() {
 
     // TILED MAP
     // let mut tiled_map: TiledMap<'_> = TiledMap::new(5, 20, 20, &atlas);
-    let mut tiled_map = match TiledMap::from(test, &atlas) {
+    let mut tiled_map = match TiledMap::from(&test, &atlas) {
         Ok(map) => map,
         Err(why) => panic!("Error: {}", why),
     };
     let mut background_tiled_map = TiledMap::water(1, 50, 50, &atlas);
 
     // ITEMS
-    let mut items = vec![
-        Item::new(
-            Vector2::new(100.0, 100.0),
-            atlas.get_texture("assets/potion.png"),
-            1.25,
-        ),
-        Item::new(
-            Vector2::new(200.0, 200.0),
-            atlas.get_texture("assets/potion.png"),
-            1.25,
-        ),
-    ];
+    let mut items: Vec<Item> = Vec::new();
+
+    for pickaxe in test.pickaxes {
+        items.push(Item::new(
+            Vector2::new(
+                (pickaxe.0 * TILE_WIDTH) as f32 * SCALE,
+                (pickaxe.1 * TILE_HEIGHT) as f32 * SCALE,
+            ),
+            atlas.get_texture("assets/pickaxe0.png"),
+            1.0,
+            item::ItemType::Pickaxe,
+        ));
+    }
+
+    for pickaxe in test.axes {
+        items.push(Item::new(
+            Vector2::new(
+                (pickaxe.0 * TILE_WIDTH) as f32 * SCALE,
+                (pickaxe.1 * TILE_HEIGHT) as f32 * SCALE,
+            ),
+            atlas.get_texture("assets/axe0.png"),
+            1.0,
+            item::ItemType::Axe,
+        ));
+    }
+
+    for pickaxe in test.shovels {
+        items.push(Item::new(
+            Vector2::new(
+                (pickaxe.0 * TILE_WIDTH) as f32 * SCALE,
+                (pickaxe.1 * TILE_HEIGHT) as f32 * SCALE,
+            ),
+            atlas.get_texture("assets/shovel0.png"),
+            1.0,
+            item::ItemType::Shovel,
+        ));
+    }
+
+    for pickaxe in test.gears {
+        items.push(Item::new(
+            Vector2::new(
+                (pickaxe.0 * TILE_WIDTH) as f32 * SCALE,
+                (pickaxe.1 * TILE_HEIGHT) as f32 * SCALE,
+            ),
+            atlas.get_texture("assets/gear.png"),
+            1.0,
+            item::ItemType::Gear,
+        ));
+    }
 
     let mut elapsed_time = 0.0;
 
@@ -206,11 +237,33 @@ fn main() {
             player.left();
         }
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            let marked_tiles:Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
+            let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
             tiled_map.handle_hit_tiles(marked_tiles);
         }
 
         player.update(delta_time, &tiled_map);
+
+        // Item collisions
+        let player_dings = player.get_collision_rect();
+
+        let collided_indices: Vec<usize> = items
+            .iter()
+            .enumerate()
+            .filter(|(_, i)| i.collision_with_rec(&player_dings))
+            .map(|(index, _)| index)
+            .collect();
+
+        for &index in collided_indices.iter() {
+            if player.add_tool(
+                &items[index],
+                &atlas,
+                &axe_frames,
+                &pickaxe_frames,
+                &shovel_frames,
+            ) {
+                items.remove(index);
+            }
+        }
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);

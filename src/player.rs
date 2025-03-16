@@ -1,10 +1,15 @@
 use crate::{
-    tiled_map::{self, Tags, Tile, TiledMap}, tool::Tool, trait_collision::Collision
+    item::Item,
+    texture_atlas::TextureAtlas,
+    tiled_map::{self, Tags, Tile, TiledMap},
+    tool::Tool,
+    trait_collision::Collision,
 };
 use raylib::prelude::*;
 
 const SCALE: f32 = 2.0;
 
+#[derive(Clone)]
 pub struct Animation<'a> {
     frames: &'a Vec<&'a Texture2D>,
     pub current: &'a Texture2D,
@@ -37,23 +42,25 @@ pub struct Player<'a> {
     pub idle: Animation<'a>,
     pub run: Animation<'a>,
     orientation: Orientation,
-    pub tool_left: Tool<'a>,
-    pub tool_right: Tool<'a>,
+    inventory: Inventory<'a>, // Wieso überall gleiche LIfetime, ich verstreh nichts hier ist doof und dieser Kommentar ist auch ziemlich lang irgendwie formatiert er das nicht WTH
+    pub hp: i32,
 }
 
+#[derive(Clone)]
 pub enum Orientation {
     Left,
     Right,
 }
 
-impl Player<'_> {
-    pub fn new<'a>(
-        pos: Vector2,
-        idle: &'a Vec<&Texture2D>,
-        run: &'a Vec<&Texture2D>,
-        tool_left: Tool<'a>,
-        tool_right: Tool<'a>,
-    ) -> Player<'a> {
+enum Inventory<'a> {
+    Empty,
+    Left(Tool<'a>),
+    Right(Tool<'a>),
+    Both(Tool<'a>, Tool<'a>),
+}
+
+impl<'a> Player<'a> {
+    pub fn new(pos: Vector2, idle: &'a Vec<&Texture2D>, run: &'a Vec<&Texture2D>) -> Player<'a> {
         Player {
             pos,
             dimensions: Vector2::new(idle[0].width() as f32, idle[0].height() as f32),
@@ -64,8 +71,8 @@ impl Player<'_> {
             idle: Animation::new(idle),
             run: Animation::new(run),
             orientation: Orientation::Right,
-            tool_left: tool_left,
-            tool_right: tool_right,
+            inventory: Inventory::Empty,
+            hp: 100,
         }
     }
 
@@ -233,12 +240,14 @@ impl Player<'_> {
     }
 
     pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
-
-        match self.orientation {
-            Orientation::Left => self.tool_left.use_tool(),
-            Orientation::Right => self.tool_right.use_tool()
+        match (&self.orientation, &mut self.inventory) {
+            (Orientation::Left, Inventory::Left(l)) => l.use_tool(),
+            (Orientation::Right, Inventory::Right(r)) => r.use_tool(),
+            (Orientation::Right, Inventory::Both(_, r)) => r.use_tool(),
+            (Orientation::Left, Inventory::Both(l, _)) => l.use_tool(),
+            _ => (),
         }
-        
+
         let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
         for layer in 0..tiled_map.layers {
             tiled_map
@@ -250,10 +259,10 @@ impl Player<'_> {
         for (tile, pos) in tool_collision_tiles {
             match tile {
                 Tile::Static(_, tags) if tags.contains(&Tags::Destroyable) => {
-                        marked_tiles.push((tile.clone(), pos));
-                    },
+                    marked_tiles.push((tile.clone(), pos));
+                }
                 // We will only interact with Static Tiles?
-                _ => ()
+                _ => (),
             }
         }
         return marked_tiles;
@@ -262,11 +271,23 @@ impl Player<'_> {
     pub fn animation_update(&mut self) {
         self.idle.update();
         self.run.update();
-        self.tool_left.update();
-        self.tool_right.update();
+        match &mut self.inventory {
+            Inventory::Left(l) => l.update(),
+            Inventory::Right(r) => r.update(),
+            Inventory::Both(l, r) => {
+                l.update();
+                r.update();
+            }
+            _ => (),
+        }
     }
 
-    pub fn draw(&mut self, d: &mut RaylibMode2D<RaylibDrawHandle>, delta_time: f32, elapsed_time: f32) {
+    pub fn draw(
+        &mut self,
+        d: &mut RaylibMode2D<RaylibDrawHandle>,
+        delta_time: f32,
+        elapsed_time: f32,
+    ) {
         let texture;
 
         if self.movement.moves() {
@@ -316,8 +337,92 @@ impl Player<'_> {
             Color::RED,
         );
 
-        self.tool_left.render(d, self.pos, elapsed_time, delta_time);
-        self.tool_right.render(d, self.pos, elapsed_time ,delta_time);
+        // Draw items
+        let offset = 20.0;
+        match &mut self.inventory {
+            Inventory::Left(l) => {
+                l.render(d, self.pos, elapsed_time, delta_time);
+            }
+            Inventory::Right(r) => {
+                r.render(d, self.pos, elapsed_time, delta_time);
+            }
+            Inventory::Both(l, r) => {
+                l.render(d, self.pos, elapsed_time, delta_time);
+                r.render(d, self.pos, elapsed_time, delta_time);
+            }
+            _ => (),
+        };
+    }
+
+    pub fn add_tool(
+        &mut self,
+        item: &Item<'a>,
+        atlas: &TextureAtlas,
+        axe_frames: &'a Vec<&Texture2D>,
+        pickaxe_frames: &'a Vec<&Texture2D>,
+        shovel_frames: &'a Vec<&Texture2D>,
+    ) -> bool {
+        let tool = match item.item_type {
+            crate::item::ItemType::Axe => {
+                Tool::Axe(Orientation::Left, Animation::new(&axe_frames), 3, false)
+            }
+
+            crate::item::ItemType::Pickaxe => Tool::Pickaxe(
+                Orientation::Right,
+                Animation::new(&pickaxe_frames),
+                3,
+                false,
+            ),
+            crate::item::ItemType::Gear => {
+                self.hp = 100;
+                return true;
+            }
+            crate::item::ItemType::Shovel => {
+                Tool::Shovel(Orientation::Right, Animation::new(&shovel_frames), 3, false)
+            }
+        };
+
+        match &self.inventory {
+            Inventory::Empty => {
+                self.inventory = Inventory::Left(tool);
+            }
+            Inventory::Left(l) => {
+                self.inventory = Inventory::Both(l.clone(), tool);
+            }
+            Inventory::Right(r) => self.inventory = Inventory::Both(tool, r.clone()),
+            _ => return false,
+        };
+
+        // Guter Code :/
+        match &mut self.inventory {
+            Inventory::Left(l) => match l {
+                Tool::Axe(or, _, _, _) => *or = Orientation::Left,
+                Tool::Pickaxe(or, _, _, _) => *or = Orientation::Left,
+                Tool::Shovel(or, _, _, _) => *or = Orientation::Left,
+            },
+            Inventory::Right(l) => match l {
+                Tool::Axe(or, _, _, _) => *or = Orientation::Right,
+                Tool::Pickaxe(or, _, _, _) => *or = Orientation::Right,
+                Tool::Shovel(or, _, _, _) => *or = Orientation::Right,
+            },
+            Inventory::Both(l, r) => {
+                match l {
+                    Tool::Axe(or, _, _, _) => *or = Orientation::Left,
+                    Tool::Pickaxe(or, _, _, _) => *or = Orientation::Left,
+                    Tool::Shovel(or, _, _, _) => *or = Orientation::Left,
+                }
+
+                match r {
+                    Tool::Axe(or, _, _, _) => *or = Orientation::Right,
+                    Tool::Pickaxe(or, _, _, _) => *or = Orientation::Right,
+                    Tool::Shovel(or, _, _, _) => *or = Orientation::Right,
+                }
+            }
+
+            _ => return false,
+        };
+
+        true
     }
 
     pub fn up(&mut self) {

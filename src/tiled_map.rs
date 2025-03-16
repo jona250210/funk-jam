@@ -169,7 +169,7 @@ impl<'a> TiledMap<'a> {
         tiled_map
     }
     
-    pub fn from(config: MazeConfig, atlas: &'a TextureAtlas) -> Result<Self, String> {
+    pub fn from(config: &MazeConfig, atlas: &'a TextureAtlas) -> Result<Self, String> {
         let mut tiled_map = TiledMap::new(2, config.size.0, config.size.1, atlas);
         let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
         let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
@@ -434,6 +434,12 @@ impl Collision for TiledMapLayer {
 pub struct MazeConfig {
     pub size: (i32, i32),
     pub player: (i32, i32),
+
+    pub axes: Vec<(i32, i32)>,
+    pub pickaxes: Vec<(i32, i32)>,
+    pub shovels: Vec<(i32, i32)>,
+    pub gears: Vec<(i32, i32)>,
+
     pub ground: String,
     pub objects: String,
 }
