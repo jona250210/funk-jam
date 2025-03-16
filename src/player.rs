@@ -1,9 +1,5 @@
 use crate::{
-    item::Item,
-    texture_atlas::TextureAtlas,
-    tiled_map::{self, Tags, Tile, TiledMap},
-    tool::Tool,
-    trait_collision::Collision,
+    audiomanager::AudioManager, item::Item, texture_atlas::TextureAtlas, tiled_map::{self, Tags, Tile, TiledMap}, tool::Tool, trait_collision::Collision
 };
 use raylib::prelude::*;
 
@@ -292,7 +288,7 @@ impl<'a> Player<'a> {
         return false;
     }
 
-    pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
+    pub fn use_tool(&mut self, tiled_map: &TiledMap, audio_manager: &mut AudioManager) -> Vec<(Tile, Vector2)> {
         let mut used_tool;
         match (&self.orientation, &mut self.inventory) {
             (Orientation::Left, Inventory::Left(l)) => {
@@ -333,14 +329,17 @@ impl<'a> Player<'a> {
                     match &mut used_tool {
                         Some(Tool::Axe(orientation, animation, u, _)) if id == &2 => {
                             marked_tiles.push((tile.clone(), pos));
+                            audio_manager.play_sound("hit_wood");
                             *u = 0;
                         }
                         Some(Tool::Pickaxe(orientation, animation, u, _)) if id == &7 => {
                             marked_tiles.push((tile.clone(), pos));
+                            audio_manager.play_sound("hit_stone");
                             *u = 0;
                         }
                         Some(Tool::Shovel(orientation, animation, u, _)) if id == &18 => {
                             marked_tiles.push((tile.clone(), pos));
+                            audio_manager.play_sound("hit_sand");
                             *u = 0;
                         }
                         _ => (),

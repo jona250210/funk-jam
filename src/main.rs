@@ -28,8 +28,27 @@ use tool::Tool;
 mod intro;
 use intro::IntroSequence;
 
+const WIDTH: i32 = 640;
+const HEIGHT: i32 = 480;
+
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
+
+    // AUDIO MANAGER
+    let mut audio_device =
+        RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
+    unsafe {
+        ffi::SetAudioStreamBufferSizeDefault(4096);
+    }
+    let mut audio_manager: AudioManager = AudioManager::new(&mut audio_device);
+
+    audio_manager.load_sound("hit_stone", "assets/sounds/stone.ogg");
+    audio_manager.load_sound("hit_wood", "assets/sounds/wood.wav");
+    audio_manager.load_sound("hit_sand", "assets/sounds/sand.ogg");
+    audio_manager.load_sound("step_sand_1", "assets/sounds/sand_step_1.wav");
+    audio_manager.load_sound("step_sand_2", "assets/sounds/sand_step_2.wav");
+    audio_manager.load_sound("ui", "assets/sounds/menu.wav");
+
 
     let test: MazeConfig = match MazeConfig::new("assets/maze2.KB") {
         Ok(config) => config,
@@ -155,13 +174,7 @@ fn main() {
         },
     );
 
-    // AUDIO MANAGER
-    let mut audio_device =
-        RaylibAudio::init_audio_device().expect("Failed to initialize audio device");
-    let mut audio_manager = AudioManager::new(&mut audio_device);
-    audio_manager.load_sound("test2", "assets/sounds/stone.ogg");
-    audio_manager.play_sound("test2");
-
+    
     let mut frame_times = 0 as f32;
 
     // TILED MAP
@@ -232,37 +245,53 @@ fn main() {
     };
     
     // INTRO, WIEDER EINKOMMENTIEREN!
-    if !intro.play(&mut rl, &thread) {
+    if !intro.play(&mut rl, &thread, &mut audio_manager) {
        return;  // Exit if window was closed during intro
     }
 
     let mut elapsed_time = 0.0;
 
     rl.set_target_fps(120);
+    let mut walk_sound_counter = 0.0;
+    let mut walk_sound_switch = false;
     while !rl.window_should_close() {
         let delta_time = rl.get_frame_time();
         elapsed_time += delta_time;
+        walk_sound_counter += delta_time;
 
         player.movement.reset();
+        let mut walking = false;
         if rl.is_key_down(KeyboardKey::KEY_W) {
             player.up();
+            walking = true;
         }
 
         if rl.is_key_down(KeyboardKey::KEY_S) {
             player.down();
+            walking = true;
         }
 
         if rl.is_key_down(KeyboardKey::KEY_D) {
             player.right();
+            walking = true;
         }
 
         if rl.is_key_down(KeyboardKey::KEY_A) {
             player.left();
+            walking = true;
+        }
+        if walking && walk_sound_counter > 0.25{
+            walk_sound_counter = 0.0;
+            walk_sound_switch = !walk_sound_switch;
+            match walk_sound_switch {
+                true => audio_manager.play_sound("step_sand_1"),
+                false => audio_manager.play_sound("step_sand_2"),
+            }
         }
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
+            let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map, &mut audio_manager);
             tiled_map.handle_hit_tiles(marked_tiles);
-        }
+        } 
         if rl.is_key_pressed(KeyboardKey::KEY_F) {
             player.switch_tools();
         }
@@ -299,10 +328,11 @@ fn main() {
         game_camera.update_target(player.pos, 20.0, 20.0);
 
         {
-            let mut d = rl.begin_drawing(&thread);
-            d.clear_background(Color::WHITE);
+            let mut dh = rl.begin_drawing(&thread);
 
-            let mut d = d.begin_mode2D(game_camera.camera);
+            dh.clear_background(Color::WHITE);
+
+            let mut d = dh.begin_mode2D(game_camera.camera);
             background_tiled_map.update_animated_tiles(delta_time);
             background_tiled_map.render(&mut d);
             tiled_map.update_animated_tiles(delta_time);
@@ -312,12 +342,10 @@ fn main() {
                 item.render(&mut d);
             }
 
-            d.draw_fps(12, 12);
             d.draw_text(format!("HP: {}", player.hp).as_str(), (player.pos.x - 100.0) as i32, (player.pos.y + 50.0) as i32, 30, Color::RED);
-            d.clear_background(Color::WHITE);
-            d.draw_fps(12, 12);
 
             player.draw(&mut d, delta_time, elapsed_time);
+            
         }
 
         if frame_times > 0.12 {
@@ -336,7 +364,7 @@ fn main() {
             IntroSequence { files_content: Vec::new() }
         }
     };
-    if !outro.play(&mut rl, &thread) {
+    if !outro.play(&mut rl, &thread, &mut audio_manager) {
        return;  // Exit if window was closed during outro
     }
 

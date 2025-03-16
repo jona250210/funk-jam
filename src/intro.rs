@@ -2,6 +2,8 @@ use raylib::prelude::*;
 use std::fs;
 use std::path::PathBuf;
 
+use crate::audiomanager::{self, AudioManager};
+
 pub struct IntroSequence {
     pub(crate) files_content: Vec<String>,
 }
@@ -38,7 +40,7 @@ impl IntroSequence {
         }
     }
     
-    pub fn play(&self, rl: &mut RaylibHandle, thread: &RaylibThread) -> bool {
+    pub fn play(&self, rl: &mut RaylibHandle, thread: &RaylibThread, audiomanager: &mut AudioManager) -> bool {
         let mut last_skip_time = 0.0;
         
         'content: for content in &self.files_content {
@@ -49,6 +51,7 @@ impl IntroSequence {
                     show_skip_message = true;
                     if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
                         last_skip_time = current_time;
+                        audiomanager.play_sound("ui");
                         continue 'content;
                     }
                 }
