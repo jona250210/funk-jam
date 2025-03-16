@@ -357,9 +357,9 @@ fn main() {
     };
 
     // INTRO, WIEDER EINKOMMENTIEREN!
-    //if !intro.play(&mut rl, &thread, &mut audio_manager) {
-    //    return; // Exit if window was closed during intro
-    //}
+    if !intro.play(&mut rl, &thread, &mut audio_manager) {
+        return; // Exit if window was closed during intro
+    }
 
     let mut elapsed_time = 0.0;
 
