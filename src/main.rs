@@ -3,7 +3,7 @@ mod trait_collision;
 mod player;
 use std::vec;
 
-use player::Player;
+use player::{Animation, Player};
 
 mod camera;
 use camera::GameCamera;
@@ -21,10 +21,13 @@ use tiled_map::{MazeConfig, Tags, Tile, TiledMap, SCALE, TILE_HEIGHT, TILE_WIDTH
 mod item;
 use item::Item;
 
+mod tool;
+use tool::Tool;
+
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
-    let test: MazeConfig = match MazeConfig::new("assets/maze0.KB") {
+    let test: MazeConfig = match MazeConfig::new("assets/maze2.KB") {
         Ok(config) => config,
         Err(why) => panic!("{}", why),
     };
@@ -62,6 +65,19 @@ fn main() {
         "assets/water2.png",
         "assets/water3.png",
         "assets/Sandmauer.png",
+        "assets/axe0.png",
+        "assets/axe1.png",
+        "assets/axe2.png",
+        "assets/hammer0.png",
+        "assets/hammer1.png",
+        "assets/hammer2.png",
+        "assets/pickaxe0.png",
+        "assets/pickaxe1.png",
+        "assets/pickaxe2.png",
+        "assets/shovel0.png",
+        "assets/shovel1.png",
+        "assets/shovel2.png",
+        "assets/shovel3.png",
     ];
     let mut atlas = TextureAtlas::new();
     for path in textures.iter() {
@@ -90,13 +106,38 @@ fn main() {
         atlas.get_texture("assets/idle6.png"),
     ];
 
+    let axe_frames = vec![
+        atlas.get_texture("assets/axe0.png"),
+        atlas.get_texture("assets/axe1.png"),
+        atlas.get_texture("assets/axe2.png"),
+    ];
+    let pickaxe_frames = vec![
+        atlas.get_texture("assets/pickaxe0.png"),
+        atlas.get_texture("assets/pickaxe1.png"),
+        atlas.get_texture("assets/pickaxe2.png"),
+    ];
+    let shovel_frames = vec![
+        atlas.get_texture("assets/shovel0.png"),
+        atlas.get_texture("assets/shovel1.png"),
+        atlas.get_texture("assets/shovel2.png"),
+        atlas.get_texture("assets/shovel3.png"),
+    ];
+    let tool_left = Tool::Axe(player::Orientation::Left, Animation::new(&axe_frames), 3, false);
+    //let tool_right = Tool::Axe(player::Orientation::Right, Animation::new(&axe_frames), 3, false);
+    //let tool_left = Tool::Pickaxe(player::Orientation::Left, Animation::new(&pickaxe_frames), 3, false);
+    let tool_right = Tool::Pickaxe(player::Orientation::Right, Animation::new(&pickaxe_frames), 3, false);
+    //let tool_left = Tool::Shovel(player::Orientation::Left, Animation::new(&shovel_frames), 3, false);
+    //let tool_right = Tool::Shovel(player::Orientation::Right, Animation::new(&shovel_frames), 3, false);
+
     let mut player = Player::new(
         Vector2::new(
-            (test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0,
-            (test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0,
+            ((test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0) * SCALE,
+            ((test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0) * SCALE,
         ),
         &idle_frames,
         &run_frames,
+        tool_left,
+        tool_right,
     );
 
     // CAMERA
@@ -108,6 +149,7 @@ fn main() {
             y: player.pos.y + 20.0,
         },
     );
+    
 
     // AUDIO MANAGER
     let mut audio_device =
@@ -124,6 +166,7 @@ fn main() {
         Ok(map) => map,
         Err(why) => panic!("Error: {}", why),
     };
+    let mut background_tiled_map = TiledMap::water(1, 50, 50, &atlas);
 
     // ITEMS
     let mut items = vec![
@@ -139,9 +182,12 @@ fn main() {
         ),
     ];
 
+    let mut elapsed_time = 0.0;
+
     rl.set_target_fps(120);
     while !rl.window_should_close() {
         let delta_time = rl.get_frame_time();
+        elapsed_time += delta_time;
 
         player.movement.reset();
         if rl.is_key_down(KeyboardKey::KEY_W) {
@@ -174,6 +220,8 @@ fn main() {
             d.clear_background(Color::WHITE);
 
             let mut d = d.begin_mode2D(game_camera.camera);
+            background_tiled_map.update_animated_tiles(delta_time);
+            background_tiled_map.render(&mut d);
             tiled_map.update_animated_tiles(delta_time);
             tiled_map.render(&mut d);
 
@@ -185,10 +233,10 @@ fn main() {
             d.clear_background(Color::WHITE);
             d.draw_fps(12, 12);
 
-            player.draw(&mut d);
+            player.draw(&mut d, delta_time, elapsed_time);
         }
 
-        if frame_times > 0.08 {
+        if frame_times > 0.12 {
             player.animation_update();
             frame_times = 0 as f32;
         } else {

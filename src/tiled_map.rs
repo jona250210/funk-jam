@@ -18,6 +18,8 @@ pub struct TiledMap<'a> {
     pub layers: i32,
     pub size_x: i32,
     pub size_y: i32,
+    pub shift_x: i32,
+    pub shift_y: i32,
     pub tile_width: i32,
     pub tile_height: i32,
     pub scale: f32,
@@ -108,6 +110,8 @@ impl<'a> TiledMap<'a> {
             layers,
             size_x,
             size_y,
+            shift_x: 0,
+            shift_y: 0,
             tile_width: TILE_WIDTH,
             tile_height: TILE_HEIGHT,
             scale: SCALE,
@@ -137,6 +141,31 @@ impl<'a> TiledMap<'a> {
         tiled_map.initialize_tiles();
         tiled_map.randomize_tiles();
 
+        tiled_map
+    }
+
+    pub fn water(layers: i32, size_x: i32, size_y: i32, atlas: &'a TextureAtlas) -> Self {
+        let mut tiled_map = TiledMap {
+            tiles_textures: HashMap::new(),
+            map: vec![TiledMapLayer::new(size_x, size_y); layers as usize],
+            layers,
+            size_x,
+            size_y,
+            shift_x: -320,
+            shift_y: -320,
+            tile_width: TILE_WIDTH,
+            tile_height: TILE_HEIGHT,
+            scale: SCALE,
+            tiles_textures_paths: vec![
+                /* 0*/ "assets/water0.png",
+                /* 1*/ "assets/water1.png",
+                /* 2*/ "assets/water2.png",
+                /* 3*/ "assets/water3.png",
+            ],
+            animation_counter: 0.0,
+        };
+        tiled_map.load_textures(atlas);
+        tiled_map.init_water();
         tiled_map
     }
     
@@ -256,6 +285,19 @@ impl<'a> TiledMap<'a> {
         }
     }
 
+    fn init_water(&mut self) {
+        for x in 0..self.size_x {
+            for y in 0..self.size_y {                
+                self.set_tile(
+                    0,
+                    x,
+                    y,
+                    Tile::Animated(vec![0, 1, 2, 3], 0, vec![Tags::Barrier]),
+                );
+            }
+        }
+    }
+
     fn randomize_tiles(&mut self) {
         let mut rng = rand::rng();
         for _ in 0..40 {
@@ -363,8 +405,8 @@ impl<'a> TiledMap<'a> {
                 for y in 0..self.size_y {
                     if let Some(texture) = self.get_tile_texture(layer, x, y) {
                         let position = Vector2 {
-                            x: (x * self.tile_width) as f32 * self.scale,
-                            y: (y * self.tile_height) as f32 * self.scale,
+                            x: (x * self.tile_width) as f32 * self.scale + self.shift_x as f32,
+                            y: (y * self.tile_height) as f32 * self.scale + self.shift_y as f32,
                         };
                         d.draw_texture_ex(texture, position, 0.0, self.scale, Color::WHITE);
                     }

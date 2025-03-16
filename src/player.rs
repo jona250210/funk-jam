@@ -1,6 +1,5 @@
 use crate::{
-    tiled_map::{self, Tags, Tile, TiledMap},
-    trait_collision::Collision,
+    tiled_map::{self, Tags, Tile, TiledMap}, tool::Tool, trait_collision::Collision
 };
 use raylib::prelude::*;
 
@@ -9,7 +8,7 @@ const SCALE: f32 = 2.0;
 pub struct Animation<'a> {
     frames: &'a Vec<&'a Texture2D>,
     pub current: &'a Texture2D,
-    index: usize,
+    pub index: usize,
 }
 
 impl Animation<'_> {
@@ -38,9 +37,11 @@ pub struct Player<'a> {
     pub idle: Animation<'a>,
     pub run: Animation<'a>,
     orientation: Orientation,
+    pub tool_left: Tool<'a>,
+    pub tool_right: Tool<'a>,
 }
 
-enum Orientation {
+pub enum Orientation {
     Left,
     Right,
 }
@@ -50,6 +51,8 @@ impl Player<'_> {
         pos: Vector2,
         idle: &'a Vec<&Texture2D>,
         run: &'a Vec<&Texture2D>,
+        tool_left: Tool<'a>,
+        tool_right: Tool<'a>,
     ) -> Player<'a> {
         Player {
             pos,
@@ -61,6 +64,8 @@ impl Player<'_> {
             idle: Animation::new(idle),
             run: Animation::new(run),
             orientation: Orientation::Right,
+            tool_left: tool_left,
+            tool_right: tool_right,
         }
     }
 
@@ -76,16 +81,16 @@ impl Player<'_> {
     pub fn get_tool_collision_rect(&self) -> Rectangle {
         return match self.orientation {
             Orientation::Left => Rectangle::new(
-                self.pos.x - 25.0,
-                self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE,
-                self.dimensions.y * SCALE * 0.5,
+                self.pos.x - 50.0,
+                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
+                self.dimensions.x * SCALE * 2.0,
+                self.dimensions.y * SCALE,
             ),
             Orientation::Right => Rectangle::new(
                 self.pos.x + 25.0,
-                self.pos.y + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE,
-                self.dimensions.y * SCALE * 0.5,
+                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
+                self.dimensions.x * SCALE * 2.0,
+                self.dimensions.y * SCALE,
             ),
         };
     }
@@ -227,7 +232,13 @@ impl Player<'_> {
         }
     }
 
-    pub fn use_tool(&self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
+    pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
+
+        match self.orientation {
+            Orientation::Left => self.tool_left.use_tool(),
+            Orientation::Right => self.tool_right.use_tool()
+        }
+        
         let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
         for layer in 0..tiled_map.layers {
             tiled_map
@@ -251,9 +262,11 @@ impl Player<'_> {
     pub fn animation_update(&mut self) {
         self.idle.update();
         self.run.update();
+        self.tool_left.update();
+        self.tool_right.update();
     }
 
-    pub fn draw(&mut self, d: &mut RaylibMode2D<RaylibDrawHandle>) {
+    pub fn draw(&mut self, d: &mut RaylibMode2D<RaylibDrawHandle>, delta_time: f32, elapsed_time: f32) {
         let texture;
 
         if self.movement.moves() {
@@ -302,6 +315,9 @@ impl Player<'_> {
             tmp.height as i32,
             Color::RED,
         );
+
+        self.tool_left.render(d, self.pos, elapsed_time, delta_time);
+        self.tool_right.render(d, self.pos, elapsed_time ,delta_time);
     }
 
     pub fn up(&mut self) {
