@@ -1,4 +1,5 @@
 use crate::{
+    item::Item,
     tiled_map::{self, Tags, Tile, TiledMap},
     trait_collision::Collision,
 };
@@ -38,6 +39,7 @@ pub struct Player<'a> {
     pub idle: Animation<'a>,
     pub run: Animation<'a>,
     orientation: Orientation,
+    inventory: Inventory<'a>, // Wieso überall gleiche LIfetime, ich verstreh nichts hier ist doof und dieser Kommentar ist auch ziemlich lang irgendwie formatiert er das nicht WTH
 }
 
 enum Orientation {
@@ -45,12 +47,15 @@ enum Orientation {
     Right,
 }
 
-impl Player<'_> {
-    pub fn new<'a>(
-        pos: Vector2,
-        idle: &'a Vec<&Texture2D>,
-        run: &'a Vec<&Texture2D>,
-    ) -> Player<'a> {
+enum Inventory<'a> {
+    Empty,
+    Left(Item<'a>),
+    Right(Item<'a>),
+    Both(Item<'a>, Item<'a>),
+}
+
+impl<'a> Player<'a> {
+    pub fn new(pos: Vector2, idle: &'a Vec<&Texture2D>, run: &'a Vec<&Texture2D>) -> Player<'a> {
         Player {
             pos,
             dimensions: Vector2::new(idle[0].width() as f32, idle[0].height() as f32),
@@ -61,6 +66,7 @@ impl Player<'_> {
             idle: Animation::new(idle),
             run: Animation::new(run),
             orientation: Orientation::Right,
+            inventory: Inventory::Empty,
         }
     }
 
@@ -239,10 +245,10 @@ impl Player<'_> {
         for (tile, pos) in tool_collision_tiles {
             match tile {
                 Tile::Static(_, tags) if tags.contains(&Tags::Destroyable) => {
-                        marked_tiles.push((tile.clone(), pos));
-                    },
+                    marked_tiles.push((tile.clone(), pos));
+                }
                 // We will only interact with Static Tiles?
-                _ => ()
+                _ => (),
             }
         }
         return marked_tiles;
@@ -302,6 +308,42 @@ impl Player<'_> {
             tmp.height as i32,
             Color::RED,
         );
+
+        // Draw items
+        let offset = 20.0;
+        match &mut self.inventory {
+            Inventory::Left(l) => {
+                l.position = self.pos + Vector2::new(-offset, 0.0);
+                l.render(d);
+            }
+            Inventory::Right(r) => {
+                r.position = self.pos + Vector2::new(offset, 0.0);
+                r.render(d);
+            }
+            Inventory::Both(l, r) => {
+                l.position = self.pos + Vector2::new(-offset, 0.0);
+                l.render(d);
+
+                r.position = self.pos + Vector2::new(offset, 0.0);
+                r.render(d);
+            }
+            _ => (),
+        };
+    }
+
+    pub fn add_tool(&mut self, item: &Item<'a>) -> bool {
+        match &self.inventory {
+            Inventory::Empty => {
+                self.inventory = Inventory::Left(item.clone());
+            }
+            Inventory::Left(l) => {
+                self.inventory = Inventory::Both(l.clone(), item.clone());
+            }
+            Inventory::Right(r) => self.inventory = Inventory::Both(item.clone(), r.clone()),
+            _ => return false,
+        };
+
+        true
     }
 
     pub fn up(&mut self) {

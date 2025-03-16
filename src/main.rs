@@ -1,7 +1,7 @@
 mod trait_collision;
 
 mod player;
-use std::vec;
+use std::{ops::Deref, vec};
 
 use player::Player;
 
@@ -16,10 +16,11 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::{MazeConfig, Tags, Tile, TiledMap, SCALE, TILE_HEIGHT, TILE_WIDTH};
+use tiled_map::{MazeConfig, SCALE, TILE_HEIGHT, TILE_WIDTH, Tags, Tile, TiledMap};
 
 mod item;
 use item::Item;
+use trait_collision::Collision;
 
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
@@ -160,11 +161,24 @@ fn main() {
             player.left();
         }
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            let marked_tiles:Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
+            let marked_tiles: Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
             tiled_map.handle_hit_tiles(marked_tiles);
         }
 
         player.update(delta_time, &tiled_map);
+
+        // Item collisions
+        let player_dings = player.get_collision_rect();
+
+        let collided_items;
+            collided_items = items.iter().filter(|i| i.collision_with_rec(&player_dings));
+        let mut to_remove: Vec<&Item> = Vec::new();
+
+        for item in collided_items {
+            if player.add_tool(item) {
+                items.retain(|i| &i != &item);
+            }
+        }
 
         // Update camera target to follow player
         game_camera.update_target(player.pos, 20.0, 20.0);
