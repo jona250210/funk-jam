@@ -114,9 +114,9 @@ impl<'a> Player<'a> {
 
     pub fn get_collision_rect(&self) -> Rectangle {
         Rectangle::new(
-            self.pos.x,
+            self.pos.x + 12.0,
             self.pos.y + 0.8 * SCALE * self.dimensions.y,
-            self.dimensions.x * SCALE,
+            self.dimensions.x * SCALE - 24.0,
             self.dimensions.y * SCALE * 0.2,
         )
     }
@@ -124,16 +124,16 @@ impl<'a> Player<'a> {
     pub fn get_tool_collision_rect(&self) -> Rectangle {
         return match self.orientation {
             Orientation::Left => Rectangle::new(
-                self.pos.x - 50.0,
-                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE * 2.0,
-                self.dimensions.y * SCALE,
+                self.pos.x - 16.0 * SCALE,
+                (self.pos.y + 24.0) + 0.5 * SCALE,
+                16.0 * SCALE,
+                24.0 * SCALE,
             ),
             Orientation::Right => Rectangle::new(
-                self.pos.x + 25.0,
-                (self.pos.y - 6.0) + 0.5 * SCALE * self.dimensions.y,
-                self.dimensions.x * SCALE * 2.0,
-                self.dimensions.y * SCALE,
+                self.pos.x + self.dimensions.x * SCALE,
+                (self.pos.y + 24.0) + 0.5 * SCALE,
+                16.0 * SCALE,
+                24.0 * SCALE,
             ),
         };
     }
@@ -476,6 +476,17 @@ impl<'a> Player<'a> {
             Orientation::Right => 1,
         };
 
+
+        let width = texture.width();
+        let height = texture.height();
+        let target_width = width;
+        let target_height = height;
+        //let mut target_width = 16;
+        //let mut target_height = 24;
+        //if width > height {
+        //    target_width = 24;
+        //    target_height = 16;
+        //}
         d.draw_texture_pro(
             texture,
             Rectangle::new(
@@ -487,8 +498,8 @@ impl<'a> Player<'a> {
             Rectangle::new(
                 self.pos.x,
                 self.pos.y,
-                (12 as f32 * SCALE) as f32,
-                (19 as f32 * SCALE) as f32,
+                (target_width as f32 * SCALE) as f32,
+                (target_height as f32 * SCALE) as f32,
             ),
             Vector2::zero(),
             0 as f32,

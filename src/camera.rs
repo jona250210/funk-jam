@@ -13,7 +13,7 @@ impl GameCamera {
                 y: screen_height as f32 / 2.0,
             },
             rotation: 0.0,
-            zoom: 1.2,
+            zoom: 1.5,
         };
 
         GameCamera { camera }

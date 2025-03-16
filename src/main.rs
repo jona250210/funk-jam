@@ -28,11 +28,11 @@ use tool::Tool;
 mod intro;
 use intro::IntroSequence;
 
-const WIDTH: i32 = 640;
-const HEIGHT: i32 = 480;
+const WIDTH: i32 = 1280;
+const HEIGHT: i32 = 720;
 
 fn main() {
-    let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
+    let (mut rl, thread) = raylib::init().size(WIDTH, HEIGHT).title("Hello, World").build();
 
     // AUDIO MANAGER
     let mut audio_device =
@@ -63,6 +63,30 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
+        "assets/run0_80.png",
+        "assets/run1_80.png",
+        "assets/run2_80.png",
+        "assets/run3_80.png",
+        "assets/run4_80.png",
+        "assets/run5_80.png",
+        "assets/run0_60.png",
+        "assets/run1_60.png",
+        "assets/run2_60.png",
+        "assets/run3_60.png",
+        "assets/run4_60.png",
+        "assets/run5_60.png",
+        "assets/run0_40.png",
+        "assets/run1_40.png",
+        "assets/run2_40.png",
+        "assets/run3_40.png",
+        "assets/run4_40.png",
+        "assets/run5_40.png",
+        "assets/run0_20.png",
+        "assets/run1_20.png",
+        "assets/run2_20.png",
+        "assets/run3_20.png",
+        "assets/run4_20.png",
+        "assets/run5_20.png",
         "assets/idle0.png",
         "assets/idle1.png",
         "assets/idle2.png",
@@ -134,51 +158,83 @@ fn main() {
 
     // PLAYER
     let run_frames0 = vec![
-        atlas.get_texture("assets/run0.png"),
-        atlas.get_texture("assets/run1.png"),
-        atlas.get_texture("assets/run2.png"),
-        atlas.get_texture("assets/run3.png"),
-        atlas.get_texture("assets/run4.png"),
-        atlas.get_texture("assets/run5.png"),
-        atlas.get_texture("assets/run6.png"),
+        atlas.get_texture("assets/run0_20.png"),
+        atlas.get_texture("assets/run1_20.png"),
+        atlas.get_texture("assets/run2_20.png"),
+        atlas.get_texture("assets/run3_20.png"),
+        atlas.get_texture("assets/run4_20.png"),
+        atlas.get_texture("assets/run5_20.png"),
+    ];
+
+    let run_frames1 = vec![
+        atlas.get_texture("assets/run0_20.png"),
+        atlas.get_texture("assets/run1_20.png"),
+        atlas.get_texture("assets/run2_20.png"),
+        atlas.get_texture("assets/run3_20.png"),
+        atlas.get_texture("assets/run4_20.png"),
+        atlas.get_texture("assets/run5_20.png"),
+    ];
+    
+    let run_frames2 = vec![
+        atlas.get_texture("assets/run0_40.png"),
+        atlas.get_texture("assets/run1_40.png"),
+        atlas.get_texture("assets/run2_40.png"),
+        atlas.get_texture("assets/run3_40.png"),
+        atlas.get_texture("assets/run4_40.png"),
+        atlas.get_texture("assets/run5_40.png"),
+    ];
+    
+    let run_frames3 = vec![
+        atlas.get_texture("assets/run0_60.png"),
+        atlas.get_texture("assets/run1_60.png"),
+        atlas.get_texture("assets/run2_60.png"),
+        atlas.get_texture("assets/run3_60.png"),
+        atlas.get_texture("assets/run4_60.png"),
+        atlas.get_texture("assets/run5_60.png"),
+    ];
+    
+    let run_frames4 = vec![
+        atlas.get_texture("assets/run0_80.png"),
+        atlas.get_texture("assets/run1_80.png"),
+        atlas.get_texture("assets/run2_80.png"),
+        atlas.get_texture("assets/run3_80.png"),
+        atlas.get_texture("assets/run4_80.png"),
+        atlas.get_texture("assets/run5_80.png"),
     ];
 
     let idle_frames0 = vec![
-        atlas.get_texture("assets/idle0.png"),
-        atlas.get_texture("assets/idle1.png"),
-        atlas.get_texture("assets/idle2.png"),
-        atlas.get_texture("assets/idle3.png"),
-        atlas.get_texture("assets/idle4.png"),
-        atlas.get_texture("assets/idle5.png"),
-        atlas.get_texture("assets/idle6.png"),
+        atlas.get_texture("assets/idle0_20.png"),
+        atlas.get_texture("assets/idle1_20.png"),
+        atlas.get_texture("assets/idle2_20.png"),
+        atlas.get_texture("assets/idle3_20.png"),
     ];
 
     let idle_frames1 = vec![
-        atlas.get_texture("assets/idle0_80.png"),
-        atlas.get_texture("assets/idle1_80.png"),
-        atlas.get_texture("assets/idle2_80.png"),
-        atlas.get_texture("assets/idle3_80.png"),
+        atlas.get_texture("assets/idle0_20.png"),
+        atlas.get_texture("assets/idle1_20.png"),
+        atlas.get_texture("assets/idle2_20.png"),
+        atlas.get_texture("assets/idle3_20.png"),
     ];
 
     let idle_frames2 = vec![
-        atlas.get_texture("assets/idle0_60.png"),
-        atlas.get_texture("assets/idle1_60.png"),
-        atlas.get_texture("assets/idle2_60.png"),
-        atlas.get_texture("assets/idle3_60.png"),
-    ];
-
-    let idle_frames3 = vec![
         atlas.get_texture("assets/idle0_40.png"),
         atlas.get_texture("assets/idle1_40.png"),
         atlas.get_texture("assets/idle2_40.png"),
         atlas.get_texture("assets/idle3_40.png"),
     ];
 
+    let idle_frames3 = vec![
+        atlas.get_texture("assets/idle0_60.png"),
+        atlas.get_texture("assets/idle1_60.png"),
+        atlas.get_texture("assets/idle2_60.png"),
+        atlas.get_texture("assets/idle3_60.png"),
+    ];
+
     let idle_frames4 = vec![
-        atlas.get_texture("assets/idle0_20.png"),
-        atlas.get_texture("assets/idle1_20.png"),
-        atlas.get_texture("assets/idle2_20.png"),
-        atlas.get_texture("assets/idle3_20.png"),
+        atlas.get_texture("assets/idle0_80.png"),
+        atlas.get_texture("assets/idle1_80.png"),
+        atlas.get_texture("assets/idle2_80.png"),
+        atlas.get_texture("assets/idle3_80.png"),
     ];
 
     let axe_frames = vec![
@@ -212,10 +268,10 @@ fn main() {
         ),
         (
             &run_frames0,
-            &run_frames0,
-            &run_frames0,
-            &run_frames0,
-            &run_frames0,
+            &run_frames1,
+            &run_frames2,
+            &run_frames3,
+            &run_frames4,
         ),
     );
 
@@ -301,9 +357,9 @@ fn main() {
     };
 
     // INTRO, WIEDER EINKOMMENTIEREN!
-    if !intro.play(&mut rl, &thread, &mut audio_manager) {
-        return; // Exit if window was closed during intro
-    }
+    //if !intro.play(&mut rl, &thread, &mut audio_manager) {
+    //    return; // Exit if window was closed during intro
+    //}
 
     let mut elapsed_time = 0.0;
 

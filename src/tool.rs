@@ -91,6 +91,15 @@ impl<'a> Tool<'a> {
             }
         };
 
+        let mut x = 0.0;
+        if tmp.0 == -1 {
+            x = player_pos.x - 32.0;
+        }
+        else {
+            x = player_pos.x + 64.0;
+        }
+
+
         d.draw_texture_pro(
             tmp.1,
             Rectangle::new(
@@ -100,8 +109,8 @@ impl<'a> Tool<'a> {
                 tmp.1.height() as f32,
             ),
             Rectangle::new(
-                player_pos.x + (tmp.0 * tmp.1.width()) as f32,
-                player_pos.y + ((elapsed_time*4.0).sin() * 4.0) + 7.0,
+                x,
+                player_pos.y + 12.0 + ((elapsed_time*4.0).sin() * 4.0) + 7.0,
                 (tmp.1.width() as f32 * SCALE) as f32,
                 (tmp.1.height() as f32 * SCALE) as f32,
             ),
