@@ -227,29 +227,25 @@ impl Player<'_> {
         }
     }
 
-    pub fn use_tool(&mut self, mut tiled_map: &TiledMap) {
-        let mut tool_collision_tiles: Vec<(&mut Tile, Vector2)> = vec![];
+    pub fn use_tool(&self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
+        let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
         for layer in 0..tiled_map.layers {
             tiled_map
                 .get_collision_tiles_with_layer(layer, &self.get_tool_collision_rect())
                 .map(|mut tmp| tool_collision_tiles.append(&mut tmp));
         }
 
-        for (tile, _pos) in tool_collision_tiles {
-            *tile = match tile {
-                // In theory only Static Objects should be destroyable
-                tiled_map::Tile::Static(id, tags) if tags.contains(&Tags::Destroyable) => {
-                    if *id == 2 {
-                        Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Destroyable])
-                    } else if *id == 7 {
-                        Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier])
-                    } else {
-                        todo!();
-                    }
-                }
-                _ => tile.clone(),
+        let mut marked_tiles: Vec<(Tile, Vector2)> = vec![];
+        for (tile, pos) in tool_collision_tiles {
+            match tile {
+                Tile::Static(_, tags) if tags.contains(&Tags::Destroyable) => {
+                        marked_tiles.push((tile.clone(), pos));
+                    },
+                // We will only interact with Static Tiles?
+                _ => ()
             }
         }
+        return marked_tiles;
     }
 
     pub fn animation_update(&mut self) {

@@ -16,7 +16,7 @@ mod texture_atlas;
 use texture_atlas::TextureAtlas;
 
 mod tiled_map;
-use tiled_map::{MazeConfig, SCALE, TILE_HEIGHT, TILE_WIDTH, Tags, TiledMap};
+use tiled_map::{MazeConfig, Tags, Tile, TiledMap, SCALE, TILE_HEIGHT, TILE_WIDTH};
 
 mod item;
 use item::Item;
@@ -139,9 +139,9 @@ fn main() {
         ),
     ];
 
+    rl.set_target_fps(120);
     while !rl.window_should_close() {
         let delta_time = rl.get_frame_time();
-        rl.set_target_fps(120);
 
         player.movement.reset();
         if rl.is_key_down(KeyboardKey::KEY_W) {
@@ -160,7 +160,8 @@ fn main() {
             player.left();
         }
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            player.use_tool(&tiled_map);
+            let marked_tiles:Vec<(Tile, Vector2)> = player.use_tool(&tiled_map);
+            tiled_map.handle_hit_tiles(marked_tiles);
         }
 
         player.update(delta_time, &tiled_map);

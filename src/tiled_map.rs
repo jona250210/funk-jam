@@ -60,9 +60,9 @@ impl TiledMapLayer {
         }
     }
 
-    pub fn get_collision_tiles(&mut self, other: &Rectangle) -> Option<Vec<(&mut Tile, Vector2)>> {
+    pub fn get_collision_tiles(& self, other: &Rectangle) -> Option<Vec<(& Tile, Vector2)>> {
         // TODO: Effizienter machen
-        let mut collisions: Vec<(&mut Tile, Vector2)> = Vec::new();
+        let mut collisions: Vec<(& Tile, Vector2)> = Vec::new();
         let width;
         let height;
 
@@ -80,7 +80,7 @@ impl TiledMapLayer {
                     TILE_HEIGHT as f32 * SCALE,
                 );
                 if tmp.check_collision_recs(other) {
-                    let lol = &mut self.tiles[x][y];
+                    let lol = & self.tiles[x][y];
                     collisions.push((
                         lol,
                         Vector2::new(
@@ -139,12 +139,11 @@ impl<'a> TiledMap<'a> {
 
         tiled_map
     }
-
+    
     pub fn from(config: MazeConfig, atlas: &'a TextureAtlas) -> Result<Self, String> {
         let mut tiled_map = TiledMap::new(2, config.size.0, config.size.1, atlas);
-
-        let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ');
-        let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ');
+        let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
+        let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
 
         // ground
         for y in 0..tiled_map.size_y {
@@ -205,6 +204,40 @@ impl<'a> TiledMap<'a> {
             self.add_tile_texture(id, texture);
         }
     }
+
+    pub fn handle_hit_tiles(&mut self, marked_tiles: Vec<(Tile, Vector2)>){
+        for (tile, pos) in marked_tiles {
+            match tile {
+                Tile::Static(id, tags) => {
+                    let x = (pos.x as i32 / (TILE_WIDTH as i32 * SCALE as i32)) as usize;
+                    let y = (pos.y as i32 / (TILE_HEIGHT as i32 * SCALE as i32)) as usize;
+                    println!("{} {}", x, y);
+
+                    match id {
+                        2 => {
+                            self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, vec![Tags::Barrier]);
+                        }
+                        7 => {
+                            self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]);
+                        }
+                        _ => ()
+                    }
+                    
+                },
+                Tile::Animated(_, _, _) => (),
+                Tile::AnimatedOnce(_, _, _) => (),
+            }
+        }
+
+        for layer in 0..self.layers {
+            for x in 0..self.size_x {
+                for y in 0..self.size_y {
+                    
+                }
+            }
+        }
+    }
+
 
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
@@ -282,7 +315,7 @@ impl<'a> TiledMap<'a> {
         if x >= self.size_x || y >= self.size_y {
             return None;
         }
-
+    
         match self.map[layer as usize].tiles[x as usize][y as usize] {
             Tile::Static(id, _) => Some(id),
             Tile::Animated(_, current, _) => Some(current as i32),
@@ -344,7 +377,7 @@ impl<'a> TiledMap<'a> {
         &self,
         layer: i32,
         other: &Rectangle,
-    ) -> Option<Vec<(&mut Tile, Vector2)>> {
+    ) -> Option<Vec<(&Tile, Vector2)>> {
         self.map[layer as usize].get_collision_tiles(other)
     }
 }
