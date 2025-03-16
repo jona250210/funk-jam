@@ -46,6 +46,7 @@ impl<'a> Tool<'a> {
                 }
                 if animation.index == 0 {
                     *animation_running = false;
+                    
                 }
             }
             Tool::Pickaxe(_, animation, _, animation_running) => {

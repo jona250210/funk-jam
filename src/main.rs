@@ -83,6 +83,12 @@ fn main() {
         "assets/shovel2.png",
         "assets/shovel3.png",
         "assets/gear.png",
+        "assets/pile0.png",
+        "assets/pile1.png",
+        "assets/pile2.png",
+        "assets/pile3.png",
+        "assets/pile4.png",
+        "assets/pile5.png",
     ];
 
     let mut atlas = TextureAtlas::new();
@@ -224,9 +230,10 @@ fn main() {
         }
     };
     
-    if !intro.play(&mut rl, &thread) {
-        return;  // Exit if window was closed during intro
-    }
+    // INTRO, WIEDER EINKOMMENTIEREN!
+    //if !intro.play(&mut rl, &thread) {
+    //    return;  // Exit if window was closed during intro
+    //}
 
     let mut elapsed_time = 0.0;
 

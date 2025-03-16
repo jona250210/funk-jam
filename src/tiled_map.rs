@@ -50,6 +50,10 @@ pub fn new_palme() -> Tile {
     Tile::Static(2, vec![Tags::Barrier, Tags::Destroyable])
 }
 
+pub fn new_pile() -> Tile {
+    Tile::Static(18, vec![Tags::Barrier, Tags::Destroyable])
+}
+
 #[derive(Clone)]
 pub struct TiledMapLayer {
     tiles: Vec<Vec<Tile>>,
@@ -134,6 +138,13 @@ impl<'a> TiledMap<'a> {
                 /*15*/ "assets/water2.png",
                 /*16*/ "assets/water3.png",
                 /*17*/ "assets/Sandmauer.png",
+                /*18*/ "assets/pile0.png",
+                /*19*/ "assets/pile1.png",
+                /*20*/ "assets/pile2.png",
+                /*21*/ "assets/pile3.png",
+                /*22*/ "assets/pile4.png",
+                /*23*/ "assets/pile5.png",
+                /*24*/ "assets/empty_tile.png",
             ],
             animation_counter: 0.0,
         };
@@ -188,6 +199,7 @@ impl<'a> TiledMap<'a> {
                         Some('3') => Tile::Static(17, vec![Tags::Barrier]),
                         Some('4') => new_palme(),
                         Some('5') => new_stone(),
+                        Some('6') => new_pile(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig ground is too short somehow".to_string()),
@@ -210,6 +222,7 @@ impl<'a> TiledMap<'a> {
                         Some('3') => Tile::Static(17, vec![Tags::Barrier]),
                         Some('4') => new_palme(),
                         Some('5') => new_stone(),
+                        Some('6') => new_pile(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig object is too short somehow".to_string()),
@@ -248,6 +261,9 @@ impl<'a> TiledMap<'a> {
                         }
                         7 => {
                             self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]);
+                        }
+                        18 => {
+                            self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![18, 19, 20, 21, 22, 23, 24], 0, vec![Tags::Barrier]);
                         }
                         _ => ()
                     }

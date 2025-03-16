@@ -364,13 +364,13 @@ impl<'a> Player<'a> {
     ) -> bool {
         let tool = match item.item_type {
             crate::item::ItemType::Axe => {
-                Tool::Axe(Orientation::Left, Animation::new(&axe_frames), 3, false)
+                Tool::Axe(Orientation::Left, Animation::new(&axe_frames), 1, false)
             }
 
             crate::item::ItemType::Pickaxe => Tool::Pickaxe(
                 Orientation::Right,
                 Animation::new(&pickaxe_frames),
-                3,
+                1,
                 false,
             ),
             crate::item::ItemType::Gear => {
@@ -378,7 +378,7 @@ impl<'a> Player<'a> {
                 return true;
             }
             crate::item::ItemType::Shovel => {
-                Tool::Shovel(Orientation::Right, Animation::new(&shovel_frames), 3, false)
+                Tool::Shovel(Orientation::Right, Animation::new(&shovel_frames), 1, false)
             }
         };
 
