@@ -40,6 +40,14 @@ pub enum Tile {
     AnimatedOnce(Vec<TextureID>, usize, Vec<Tags>),
 }
 
+pub fn new_stone() -> Tile {
+    Tile::Static(7, vec![Tags::Barrier, Tags::Destroyable])
+}
+
+pub fn new_palme() -> Tile {
+    Tile::Static(2, vec![Tags::Barrier, Tags::Destroyable])
+}
+
 #[derive(Clone)]
 pub struct TiledMapLayer {
     tiles: Vec<Vec<Tile>>,
@@ -52,11 +60,19 @@ impl TiledMapLayer {
         }
     }
 
-    pub fn get_collision_tiles(&self, other: &Rectangle) -> Option<Vec<(&Tile, Vector2)>> {
+    pub fn get_collision_tiles(& self, other: &Rectangle) -> Option<Vec<(& Tile, Vector2)>> {
         // TODO: Effizienter machen
-        let mut collisions: Vec<(&Tile, Vector2)> = Vec::new();
-        for x in 0..self.tiles.len() {
-            for y in 0..self.tiles[x].len() {
+        let mut collisions: Vec<(& Tile, Vector2)> = Vec::new();
+        let width;
+        let height;
+
+        {
+            width = self.tiles.len();
+            height = self.tiles[0].len();
+        }
+
+        for x in 0..width {
+            for y in 0..height {
                 let tmp = Rectangle::new(
                     (x as i32 * TILE_WIDTH) as f32 * SCALE,
                     (y as i32 * TILE_HEIGHT) as f32 * SCALE,
@@ -64,8 +80,9 @@ impl TiledMapLayer {
                     TILE_HEIGHT as f32 * SCALE,
                 );
                 if tmp.check_collision_recs(other) {
+                    let lol = & self.tiles[x][y];
                     collisions.push((
-                        &self.tiles[x][y],
+                        lol,
                         Vector2::new(
                             (x as i32 * TILE_WIDTH) as f32 * SCALE,
                             (y as i32 * TILE_HEIGHT) as f32 * SCALE,
@@ -122,12 +139,11 @@ impl<'a> TiledMap<'a> {
 
         tiled_map
     }
-
+    
     pub fn from(config: MazeConfig, atlas: &'a TextureAtlas) -> Result<Self, String> {
         let mut tiled_map = TiledMap::new(2, config.size.0, config.size.1, atlas);
-
-        let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ');
-        let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ');
+        let mut ground_iter = config.ground.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
+        let mut objects_iter = config.objects.chars().filter(|c| c != &'\n' && c != &' ' && c != &'\r');
 
         // ground
         for y in 0..tiled_map.size_y {
@@ -141,8 +157,8 @@ impl<'a> TiledMap<'a> {
                         Some('1') => Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]),
                         Some('2') => Tile::Static(1, Vec::new()),
                         Some('3') => Tile::Static(17, vec![Tags::Barrier]),
-                        Some('4') => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Destroyable]),
-                        Some('5') => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+                        Some('4') => new_palme(),
+                        Some('5') => new_stone(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig ground is too short somehow".to_string()),
@@ -163,8 +179,8 @@ impl<'a> TiledMap<'a> {
                         Some('1') => Tile::Animated(vec![13, 14, 15, 16], 0, vec![Tags::Barrier]),
                         Some('2') => Tile::Static(1, Vec::new()),
                         Some('3') => Tile::Static(17, vec![Tags::Barrier]),
-                        Some('4') => Tile::Animated(vec![2, 3, 4, 5], 0, vec![Tags::Destroyable]),
-                        Some('5') => Tile::Animated(vec![7, 8, 9, 10, 11], 0, vec![Tags::Barrier]),
+                        Some('4') => new_palme(),
+                        Some('5') => new_stone(),
 
                         Some(c) => return Err(format!("MazeConfig id {} is invalid", c)),
                         None => return Err("MazeConfig object is too short somehow".to_string()),
@@ -189,10 +205,44 @@ impl<'a> TiledMap<'a> {
         }
     }
 
+    pub fn handle_hit_tiles(&mut self, marked_tiles: Vec<(Tile, Vector2)>){
+        for (tile, pos) in marked_tiles {
+            match tile {
+                Tile::Static(id, tags) => {
+                    let x = (pos.x as i32 / (TILE_WIDTH as i32 * SCALE as i32)) as usize;
+                    let y = (pos.y as i32 / (TILE_HEIGHT as i32 * SCALE as i32)) as usize;
+                    println!("{} {}", x, y);
+
+                    match id {
+                        2 => {
+                            self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![2, 3, 4, 5, 6], 0, vec![Tags::Barrier]);
+                        }
+                        7 => {
+                            self.map[1 as usize].tiles[x][y] = Tile::AnimatedOnce(vec![7, 8, 9, 10, 11, 12], 0, vec![Tags::Barrier]);
+                        }
+                        _ => ()
+                    }
+                    
+                },
+                Tile::Animated(_, _, _) => (),
+                Tile::AnimatedOnce(_, _, _) => (),
+            }
+        }
+
+        for layer in 0..self.layers {
+            for x in 0..self.size_x {
+                for y in 0..self.size_y {
+                    
+                }
+            }
+        }
+    }
+
+
     fn initialize_tiles(&mut self) {
         for x in 0..self.size_x {
             for y in 0..self.size_y {
-                if x > 3 && x < 15 && y > 3 && y < 15{
+                if x > 3 && x < 15 && y > 3 && y < 15 {
                     self.set_tile(0, x, y, Tile::Static(1, Vec::new()))
                 } else {
                     self.set_tile(
@@ -265,7 +315,7 @@ impl<'a> TiledMap<'a> {
         if x >= self.size_x || y >= self.size_y {
             return None;
         }
-
+    
         match self.map[layer as usize].tiles[x as usize][y as usize] {
             Tile::Static(id, _) => Some(id),
             Tile::Animated(_, current, _) => Some(current as i32),
@@ -298,14 +348,13 @@ impl<'a> TiledMap<'a> {
                         {
                             *current += 1
                         }
-                        Tile::AnimatedOnce(_, _, tags) => { 
+                        Tile::AnimatedOnce(_, _, tags) => {
                             tags.retain(|tag| *tag != Tags::Barrier);
-                        },
+                        }
                     };
                 }
             }
         }
-        
     }
 
     pub fn render(&self, d: &mut RaylibMode2D<'_, RaylibDrawHandle>) {
