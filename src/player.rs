@@ -142,6 +142,12 @@ impl<'a> Player<'a> {
         let old_pos = self.pos.clone();
         let old_old_pos = self.pos.clone();
 
+        if self.hp <= 200 {
+            self.movement.speed = 150.0;
+        } else {
+            self.movement.speed = 300.0;
+        }
+
         self.pos.x = old_pos.x;
         self.pos.y = old_pos.y;
 
