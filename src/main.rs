@@ -64,6 +64,7 @@ fn main() {
         "assets/run4.png",
         "assets/run5.png",
         "assets/run6.png",
+
         "assets/idle0.png",
         "assets/idle1.png",
         "assets/idle2.png",
@@ -71,6 +72,23 @@ fn main() {
         "assets/idle4.png",
         "assets/idle5.png",
         "assets/idle6.png",
+        "assets/idle0_80.png",
+        "assets/idle1_80.png",
+        "assets/idle2_80.png",
+        "assets/idle3_80.png",
+        "assets/idle0_60.png",
+        "assets/idle1_60.png",
+        "assets/idle2_60.png",
+        "assets/idle3_60.png",
+        "assets/idle0_40.png",
+        "assets/idle1_40.png",
+        "assets/idle2_40.png",
+        "assets/idle3_40.png",
+        "assets/idle0_20.png",
+        "assets/idle1_20.png",
+        "assets/idle2_20.png",
+        "assets/idle3_20.png",
+
         "assets/palme0.png",
         "assets/palme1.png",
         "assets/palme2.png",
@@ -118,7 +136,7 @@ fn main() {
     }
 
     // PLAYER
-    let run_frames = vec![
+    let run_frames0 = vec![
         atlas.get_texture("assets/run0.png"),
         atlas.get_texture("assets/run1.png"),
         atlas.get_texture("assets/run2.png"),
@@ -128,7 +146,7 @@ fn main() {
         atlas.get_texture("assets/run6.png"),
     ];
 
-    let idle_frames = vec![
+    let idle_frames0 = vec![
         atlas.get_texture("assets/idle0.png"),
         atlas.get_texture("assets/idle1.png"),
         atlas.get_texture("assets/idle2.png"),
@@ -136,6 +154,34 @@ fn main() {
         atlas.get_texture("assets/idle4.png"),
         atlas.get_texture("assets/idle5.png"),
         atlas.get_texture("assets/idle6.png"),
+    ];
+
+    let idle_frames1 = vec![
+        atlas.get_texture("assets/idle0_80.png"),
+        atlas.get_texture("assets/idle1_80.png"),
+        atlas.get_texture("assets/idle2_80.png"),
+        atlas.get_texture("assets/idle3_80.png"),
+    ];
+
+    let idle_frames2 = vec![
+        atlas.get_texture("assets/idle0_60.png"),
+        atlas.get_texture("assets/idle1_60.png"),
+        atlas.get_texture("assets/idle2_60.png"),
+        atlas.get_texture("assets/idle3_60.png"),
+    ];
+
+    let idle_frames3 = vec![
+        atlas.get_texture("assets/idle0_40.png"),
+        atlas.get_texture("assets/idle1_40.png"),
+        atlas.get_texture("assets/idle2_40.png"),
+        atlas.get_texture("assets/idle3_40.png"),
+    ];
+
+    let idle_frames4 = vec![
+        atlas.get_texture("assets/idle0_20.png"),
+        atlas.get_texture("assets/idle1_20.png"),
+        atlas.get_texture("assets/idle2_20.png"),
+        atlas.get_texture("assets/idle3_20.png"),
     ];
 
     let axe_frames = vec![
@@ -160,8 +206,20 @@ fn main() {
             ((test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0) * SCALE,
             ((test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0) * SCALE,
         ),
-        &idle_frames,
-        &run_frames,
+        (
+            &idle_frames0,
+            &idle_frames1,
+            &idle_frames2,
+            &idle_frames3,
+            &idle_frames4,
+        ),
+        (
+            &run_frames0,
+            &run_frames0,
+            &run_frames0,
+            &run_frames0,
+            &run_frames0,
+        ),
     );
 
     // CAMERA
@@ -235,15 +293,17 @@ fn main() {
             item::ItemType::Gear,
         ));
     }
-  
+
     let intro = match IntroSequence::new("assets/intro") {
         Ok(intro) => intro,
         Err(err) => {
             println!("Failed to load intro sequence: {}", err);
-            IntroSequence { files_content: Vec::new() }
+            IntroSequence {
+                files_content: Vec::new(),
+            }
         }
     };
-    
+
     // INTRO, WIEDER EINKOMMENTIEREN!
     if !intro.play(&mut rl, &thread, &mut audio_manager) {
        return;  // Exit if window was closed during intro
@@ -342,7 +402,10 @@ fn main() {
                 item.render(&mut d);
             }
 
+            d.draw_fps(12, 12);
             d.draw_text(format!("HP: {}", player.hp).as_str(), (player.pos.x - 100.0) as i32, (player.pos.y + 50.0) as i32, 30, Color::RED);
+            d.clear_background(Color::WHITE);
+            d.draw_fps(12, 12);
 
             player.draw(&mut d, delta_time, elapsed_time);
             
@@ -364,8 +427,7 @@ fn main() {
             IntroSequence { files_content: Vec::new() }
         }
     };
-    if !outro.play(&mut rl, &thread, &mut audio_manager) {
+    if !outro.play(&mut rl, &thread) {
        return;  // Exit if window was closed during outro
     }
-
 }

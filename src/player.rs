@@ -35,8 +35,20 @@ pub struct Player<'a> {
     pub pos: Vector2,
     pub dimensions: Vector2,
     pub movement: Movement,
-    pub idle: Animation<'a>,
-    pub run: Animation<'a>,
+    pub idle: (
+        Animation<'a>, // high hp
+        Animation<'a>, //   ^
+        Animation<'a>, //   |
+        Animation<'a>, //   |
+        Animation<'a>, // low hp
+    ),
+    pub run: (
+        Animation<'a>, // high hp
+        Animation<'a>, //   ^
+        Animation<'a>, //   |
+        Animation<'a>, //   |
+        Animation<'a>, // low hp
+    ),
     orientation: Orientation,
     inventory: Inventory<'a>, // Wieso überall gleiche LIfetime, ich verstreh nichts hier ist doof und dieser Kommentar ist auch ziemlich lang irgendwie formatiert er das nicht WTH
     pub hp: i32,
@@ -56,16 +68,44 @@ enum Inventory<'a> {
 }
 
 impl<'a> Player<'a> {
-    pub fn new(pos: Vector2, idle: &'a Vec<&Texture2D>, run: &'a Vec<&Texture2D>) -> Player<'a> {
+    pub fn new(
+        pos: Vector2,
+        idle: (
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+        ),
+        run: (
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+            &'a Vec<&Texture2D>,
+        ),
+    ) -> Player<'a> {
         Player {
             pos,
-            dimensions: Vector2::new(idle[0].width() as f32, idle[0].height() as f32),
+            dimensions: Vector2::new(idle.0[0].width() as f32, idle.0[0].height() as f32),
             movement: Movement {
                 direction: Vector2 { x: 0.0, y: 0.0 },
                 speed: 300.0,
             },
-            idle: Animation::new(idle),
-            run: Animation::new(run),
+            idle: (
+                Animation::new(idle.0),
+                Animation::new(idle.1),
+                Animation::new(idle.2),
+                Animation::new(idle.3),
+                Animation::new(idle.4),
+            ),
+            run: (
+                Animation::new(run.0),
+                Animation::new(run.1),
+                Animation::new(run.2),
+                Animation::new(run.3),
+                Animation::new(run.4),
+            ),
             orientation: Orientation::Right,
             inventory: Inventory::Empty,
             hp: 1000,
@@ -276,12 +316,12 @@ impl<'a> Player<'a> {
                 },
             },
         };
-      
+
         if self.pos != old_old_pos {
             if self.hp.is_positive() {
                 self.hp -= 1;
             } else {
-                panic!("TOD");
+                return true;
             }
         }
 
@@ -353,8 +393,27 @@ impl<'a> Player<'a> {
     }
 
     pub fn animation_update(&mut self) {
-        self.idle.update();
-        self.run.update();
+        // Hallo
+        // ich weiß das das alles kagge is aber jetzt erst Recht, der ganze Code ist eh schon doof
+        // flyingpower guave ist gar nicht so lecker, der ist ziemlich süß eigentlich :/
+        // TODO: Bessere Getränke kaufen
+        if self.hp > (0.8 * 1000.0) as i32 {
+            self.idle.0.update();
+            self.run.0.update();
+        } else if self.hp > (0.6 * 1000.0) as i32 {
+            self.idle.1.update();
+            self.run.1.update();
+        } else if self.hp > (0.4 * 1000.0) as i32 {
+            self.idle.2.update();
+            self.run.2.update();
+        } else if self.hp > (0.2 * 1000.0) as i32 {
+            self.idle.3.update();
+            self.run.3.update();
+        } else {
+            self.idle.4.update();
+            self.run.4.update();
+        }
+
         match &mut self.inventory {
             Inventory::Left(l) => l.update(),
             Inventory::Right(r) => r.update(),
@@ -374,10 +433,36 @@ impl<'a> Player<'a> {
     ) {
         let texture;
 
-        if self.movement.moves() {
-            texture = &self.run.current;
+        if self.hp > (0.8 * 1000.0) as i32 {
+            if self.movement.moves() {
+                texture = &self.run.0.current;
+            } else {
+                texture = &self.idle.0.current;
+            }
+        } else if self.hp > (0.6 * 1000.0) as i32 {
+            if self.movement.moves() {
+                texture = &self.run.1.current;
+            } else {
+                texture = &self.idle.1.current;
+            }
+        } else if self.hp > (0.4 * 1000.0) as i32 {
+            if self.movement.moves() {
+                texture = &self.run.2.current;
+            } else {
+                texture = &self.idle.2.current;
+            }
+        } else if self.hp > (0.2 * 1000.0) as i32 {
+            if self.movement.moves() {
+                texture = &self.run.3.current;
+            } else {
+                texture = &self.idle.3.current;
+            }
         } else {
-            texture = &self.idle.current;
+            if self.movement.moves() {
+                texture = &self.run.4.current;
+            } else {
+                texture = &self.idle.4.current;
+            }
         }
 
         let rotation_modifier = match self.orientation {
@@ -396,8 +481,8 @@ impl<'a> Player<'a> {
             Rectangle::new(
                 self.pos.x,
                 self.pos.y,
-                (texture.width() as f32 * SCALE) as f32,
-                (texture.height() as f32 * SCALE) as f32,
+                (12 as f32 * SCALE) as f32,
+                (19 as f32 * SCALE) as f32,
             ),
             Vector2::zero(),
             0 as f32,
