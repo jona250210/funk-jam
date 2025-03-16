@@ -234,9 +234,11 @@ impl Player<'_> {
 
     pub fn use_tool(&mut self, tiled_map: &TiledMap) -> Vec<(Tile, Vector2)> {
 
-        self.tool_left.use_tool();
-        self.tool_right.use_tool();
-
+        match self.orientation {
+            Orientation::Left => self.tool_left.use_tool(),
+            Orientation::Right => self.tool_right.use_tool()
+        }
+        
         let mut tool_collision_tiles: Vec<(&Tile, Vector2)> = vec![];
         for layer in 0..tiled_map.layers {
             tiled_map

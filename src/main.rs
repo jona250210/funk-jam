@@ -27,7 +27,7 @@ use tool::Tool;
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
-    let test: MazeConfig = match MazeConfig::new("assets/maze0.KB") {
+    let test: MazeConfig = match MazeConfig::new("assets/maze2.KB") {
         Ok(config) => config,
         Err(why) => panic!("{}", why),
     };
@@ -131,8 +131,8 @@ fn main() {
 
     let mut player = Player::new(
         Vector2::new(
-            (test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0,
-            (test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0,
+            ((test.player.0 * TILE_WIDTH) as f32 + TILE_WIDTH as f32 / 2.0) * SCALE,
+            ((test.player.1 * TILE_HEIGHT) as f32 + TILE_HEIGHT as f32 / 2.0) * SCALE,
         ),
         &idle_frames,
         &run_frames,
@@ -149,6 +149,7 @@ fn main() {
             y: player.pos.y + 20.0,
         },
     );
+    
 
     // AUDIO MANAGER
     let mut audio_device =
@@ -165,6 +166,7 @@ fn main() {
         Ok(map) => map,
         Err(why) => panic!("Error: {}", why),
     };
+    let mut background_tiled_map = TiledMap::water(1, 50, 50, &atlas);
 
     // ITEMS
     let mut items = vec![
@@ -218,6 +220,8 @@ fn main() {
             d.clear_background(Color::WHITE);
 
             let mut d = d.begin_mode2D(game_camera.camera);
+            background_tiled_map.update_animated_tiles(delta_time);
+            background_tiled_map.render(&mut d);
             tiled_map.update_animated_tiles(delta_time);
             tiled_map.render(&mut d);
 
