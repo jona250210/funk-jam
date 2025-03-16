@@ -24,6 +24,9 @@ use item::Item;
 mod tool;
 use tool::Tool;
 
+mod intro;
+use intro::IntroSequence;
+
 fn main() {
     let (mut rl, thread) = raylib::init().size(640, 480).title("Hello, World").build();
 
@@ -181,6 +184,18 @@ fn main() {
             1.25,
         ),
     ];
+    
+    let intro = match IntroSequence::new("assets/intro") {
+        Ok(intro) => intro,
+        Err(err) => {
+            println!("Failed to load intro sequence: {}", err);
+            IntroSequence { files_content: Vec::new() }
+        }
+    };
+    
+    if !intro.play(&mut rl, &thread) {
+        return;  // Exit if window was closed during intro
+    }
 
     let mut elapsed_time = 0.0;
 
